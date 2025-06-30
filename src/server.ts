@@ -4,6 +4,9 @@ import { userRouter } from './user/user.route';
 import cors from 'cors';
 import { bookingRouter } from './booking/booking.route';
 import { hotelRouter } from './hotel/hotel.route';
+import { roomRouter } from './room/room.route';
+import { ticketRouter } from './supportTicket/ticket.route';
+import { paymentRouter } from './payment/payment.route';
 
 
 dotenv.config();
@@ -38,6 +41,9 @@ app.use(cors({
 app.use('/api',userRouter);
 app.use('/api',bookingRouter);
 app.use('/api',hotelRouter);
+app.use('/api',roomRouter);
+app.use('/api',ticketRouter);
+app.use('/api',paymentRouter);
 
 
 
