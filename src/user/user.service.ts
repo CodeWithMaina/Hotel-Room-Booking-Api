@@ -4,7 +4,7 @@ import { users } from "../drizzle/schema";
 import { TUserInsert, TUserSelect } from "../drizzle/schema";
 
 export const getUsersService = async (): Promise<TUserSelect[]> => {
-    return await db.query.users.findMany();
+    return await db.query.users.findMany({});
 };
 
 export const getUserByIdService = async (userId: number): Promise<TUserSelect | null> => {

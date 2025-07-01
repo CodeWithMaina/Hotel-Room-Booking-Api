@@ -7,6 +7,9 @@ import { hotelRouter } from './hotel/hotel.route';
 import { roomRouter } from './room/room.route';
 import { ticketRouter } from './supportTicket/ticket.route';
 import { paymentRouter } from './payment/payment.route';
+import { logger } from './middleware/logger';
+import { rateLimiterMiddleware } from './middleware/rateLimiter';
+import { authRouter } from './auth/auth.route';
 
 
 dotenv.config();
@@ -18,8 +21,8 @@ const PORT = process.env.PORT || 5000;
 // Basic Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// app.use(logger);
-// app.use(rateLimiterMiddleware);
+app.use(logger);
+app.use(rateLimiterMiddleware);
 
 //default route
 app.get('/', (req, res:Response) => {
@@ -38,6 +41,7 @@ app.use(cors({
 
 
 //import route
+app.use('/api',authRouter);
 app.use('/api',userRouter);
 app.use('/api',bookingRouter);
 app.use('/api',hotelRouter);
