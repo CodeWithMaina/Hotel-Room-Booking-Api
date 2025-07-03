@@ -10,6 +10,9 @@ import { paymentRouter } from './payment/payment.route';
 import { logger } from './middleware/logger';
 import { rateLimiterMiddleware } from './middleware/rateLimiter';
 import { authRouter } from './auth/auth.route';
+import { amenityRouter } from './amenities/amenities.route';
+import { addressRouter } from './addresses/addresses.route';
+import { entityAmenityRouter } from './entityAmenities/enityAmenities.routes';
 
 
 dotenv.config();
@@ -48,6 +51,9 @@ app.use('/api',hotelRouter);
 app.use('/api',roomRouter);
 app.use('/api',ticketRouter);
 app.use('/api',paymentRouter);
+app.use('/api',amenityRouter);
+app.use('/api',addressRouter);
+app.use('/api',entityAmenityRouter);
 
 
 

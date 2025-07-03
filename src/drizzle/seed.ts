@@ -1,193 +1,345 @@
+// seed.ts
 import db from './db';
-import { 
-  users, 
-  hotels, 
-  rooms, 
-  bookings, 
-  payments, 
-  customerSupportTickets 
+import {
+  users,
+  hotels,
+  rooms,
+  bookings,
+  payments,
+  customerSupportTickets,
+  addresses,
+  amenities,
+  entityAmenities,
+  userRoleEnum,
+  bookingStatusEnum,
+  paymentStatusEnum,
+  ticketStatusEnum,
+  addressEntityTypeEnum,
+  amenityEntityTypeEnum
 } from './schema';
 
-const seedDatabase = async () => {
-  try {
-    // Clear existing data in correct order (child to parent)
-    // await db.delete(payments);
-    // await db.delete(customerSupportTickets);
-    // await db.delete(bookings);
-    // await db.delete(rooms);
-    // await db.delete(hotels);
-    // await db.delete(users);
+async function seedDatabase() {
+  console.log('Starting database seeding...');
 
-    // Seed Users
-    const insertedUsers = await db.insert(users).values([
-      {
-        firstName: 'Admin',
-        lastName: 'User',
-        email: 'admin@hotel.com',
-        password: 'admin', 
-        role: 'admin',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'user@hotel.com',
-        password: 'user',
-        role: 'user',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ]).returning();
+  // Clear existing data (be careful with this in production!)
+  // console.log('Clearing existing data...');
+  // await db.delete(entityAmenities).execute();
+  // await db.delete(amenities).execute();
+  // await db.delete(addresses).execute();
+  // await db.delete(payments).execute();
+  // await db.delete(bookings).execute();
+  // await db.delete(rooms).execute();
+  // await db.delete(hotels).execute();
+  // await db.delete(customerSupportTickets).execute();
+  // await db.delete(users).execute();
 
-    const [admin, user] = insertedUsers;
+  // Seed Users
+  console.log('Seeding users...');
+  const userData = await db.insert(users).values([
+    {
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'john.doe@example.com',
+      password: '$2b$10$hashedpassword1', 
+      contactPhone: '+1234567890',
+      role: userRoleEnum.enumValues[0], // 'user'
+    },
+    {
+      firstName: 'Jane',
+      lastName: 'Smith',
+      email: 'jane.smith@example.com',
+      password: '$2b$10$hashedpassword2',
+      contactPhone: '+1987654321',
+      role: userRoleEnum.enumValues[0], // 'user'
+    },
+    {
+      firstName: 'Hotel',
+      lastName: 'Owner',
+      email: 'owner@example.com',
+      password: '$2b$10$hashedpassword3',
+      contactPhone: '+1122334455',
+      role: userRoleEnum.enumValues[1], // 'owner'
+    },
+    {
+      firstName: 'Admin',
+      lastName: 'User',
+      email: 'admin@example.com',
+      password: '$2b$10$hashedpassword4',
+      contactPhone: '+1555666777',
+      role: userRoleEnum.enumValues[2], // 'admin'
+    },
+  ]).returning();
 
-    // Seed Hotels
-    const insertedHotels = await db.insert(hotels).values([
-      {
-        name: 'Grand Plaza',
-        location: 'New York',
-        address: '123 Luxury Avenue',
-        contactPhone: '+1234567890',
-        category: '5-star',
-        rating: '4.8',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        name: 'Cozy Inn',
-        location: 'Chicago',
-        address: '456 Comfort Street',
-        contactPhone: '+1987654321',
-        category: '3-star',
-        rating: '3.9',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ]).returning();
+  // Seed Hotels
+  console.log('Seeding hotels...');
+  const hotelData = await db.insert(hotels).values([
+    {
+      name: 'Grand Plaza Hotel',
+      location: 'New York',
+      contactPhone: '+12125551234',
+      category: 'Luxury',
+      rating: '4.8', // Numeric fields should be strings
+    },
+    {
+      name: 'Beachside Resort',
+      location: 'Miami',
+      contactPhone: '+13055556789',
+      category: 'Resort',
+      rating: '4.5',
+    },
+    {
+      name: 'Mountain View Lodge',
+      location: 'Denver',
+      contactPhone: '+17205551234',
+      category: 'Boutique',
+      rating: '4.2',
+    },
+  ]).returning();
 
-    const [grandPlaza, cozyInn] = insertedHotels;
+  // Seed Addresses
+  console.log('Seeding addresses...');
+  await db.insert(addresses).values([
+    // User addresses
+    {
+      entityId: userData[0].userId,
+      entityType: addressEntityTypeEnum.enumValues[0], // 'user'
+      street: '123 Main St',
+      city: 'New York',
+      state: 'NY',
+      postalCode: '10001',
+      country: 'USA',
+    },
+    {
+      entityId: userData[1].userId,
+      entityType: addressEntityTypeEnum.enumValues[0], // 'user'
+      street: '456 Oak Ave',
+      city: 'Los Angeles',
+      state: 'CA',
+      postalCode: '90001',
+      country: 'USA',
+    },
+    // Hotel addresses
+    {
+      entityId: hotelData[0].hotelId,
+      entityType: addressEntityTypeEnum.enumValues[1], // 'hotel'
+      street: '789 Broadway',
+      city: 'New York',
+      state: 'NY',
+      postalCode: '10003',
+      country: 'USA',
+    },
+    {
+      entityId: hotelData[1].hotelId,
+      entityType: addressEntityTypeEnum.enumValues[1], // 'hotel'
+      street: '101 Ocean Drive',
+      city: 'Miami',
+      state: 'FL',
+      postalCode: '33139',
+      country: 'USA',
+    },
+    {
+      entityId: hotelData[2].hotelId,
+      entityType: addressEntityTypeEnum.enumValues[1], // 'hotel'
+      street: '202 Mountain Rd',
+      city: 'Denver',
+      state: 'CO',
+      postalCode: '80202',
+      country: 'USA',
+    },
+  ]).execute();
 
-    // Seed Rooms
-    const insertedRooms = await db.insert(rooms).values([
-      {
-        hotelId: grandPlaza.hotelId,
-        roomType: 'Deluxe Suite',
-        pricePerNight: '350.00',
-        capacity: 2,
-        amenities: ['TV', 'Minibar', 'Jacuzzi'],
-        isAvailable: true,
-        createdAt: new Date()
-      },
-      {
-        hotelId: grandPlaza.hotelId,
-        roomType: 'Executive Room',
-        pricePerNight: '250.00',
-        capacity: 2,
-        amenities: ['TV', 'Work Desk'],
-        isAvailable: true,
-        createdAt: new Date()
-      },
-      {
-        hotelId: cozyInn.hotelId,
-        roomType: 'Standard Room',
-        pricePerNight: '120.00',
-        capacity: 2,
-        amenities: ['TV'],
-        isAvailable: true,
-        createdAt: new Date()
-      },
-      {
-        hotelId: cozyInn.hotelId,
-        roomType: 'Single Room',
-        pricePerNight: '80.00',
-        capacity: 1,
-        amenities: [],
-        isAvailable: true,
-        createdAt: new Date()
-      }
-    ]).returning();
+  // Seed Amenities
+  console.log('Seeding amenities...');
+  const amenityData = await db.insert(amenities).values([
+    { name: 'Wi-Fi', description: 'High-speed internet access', icon: 'wifi' },
+    { name: 'Swimming Pool', description: 'Outdoor swimming pool', icon: 'pool' },
+    { name: 'Gym', description: 'Fully equipped fitness center', icon: 'fitness_center' },
+    { name: 'Restaurant', description: 'On-site dining', icon: 'restaurant' },
+    { name: 'Spa', description: 'Full-service spa', icon: 'spa' },
+    { name: 'Parking', description: 'Free parking available', icon: 'local_parking' },
+    { name: 'TV', description: 'Flat-screen TV', icon: 'tv' },
+    { name: 'Air Conditioning', description: 'Climate control', icon: 'ac_unit' },
+    { name: 'Mini Bar', description: 'In-room refreshments', icon: 'local_bar' },
+    { name: 'Room Service', description: '24-hour room service', icon: 'room_service' },
+    { name: 'King Bed', description: 'Comfortable king-size bed', icon: 'bed' },
+    { name: 'Double Bed', description: 'Two double beds', icon: 'bed' },
+    { name: 'Balcony', description: 'Private balcony', icon: 'balcony' },
+  ]).returning();
 
-    const [deluxeSuite, executiveRoom, standardRoom, singleRoom] = insertedRooms;
+  // Seed Rooms
+  console.log('Seeding rooms...');
+  const roomValues = [
+    // Grand Plaza Hotel rooms
+    {
+      hotelId: hotelData[0].hotelId,
+      roomType: 'Deluxe King',
+      pricePerNight: '299.99',
+      capacity: 2,
+      isAvailable: true,
+    },
+    {
+      hotelId: hotelData[0].hotelId,
+      roomType: 'Executive Suite',
+      pricePerNight: '499.99',
+      capacity: 4,
+      isAvailable: true,
+    },
+    {
+      hotelId: hotelData[0].hotelId,
+      roomType: 'Standard Double',
+      pricePerNight: '199.99',
+      capacity: 2,
+      isAvailable: true,
+    },
+    // Beachside Resort rooms
+    {
+      hotelId: hotelData[1].hotelId,
+      roomType: 'Ocean View',
+      pricePerNight: '349.99',
+      capacity: 2,
+      isAvailable: true,
+    },
+    {
+      hotelId: hotelData[1].hotelId,
+      roomType: 'Penthouse',
+      pricePerNight: '799.99',
+      capacity: 6,
+      isAvailable: true,
+    },
+    // Mountain View Lodge rooms
+    {
+      hotelId: hotelData[2].hotelId,
+      roomType: 'Cabin Suite',
+      pricePerNight: '249.99',
+      capacity: 4,
+      isAvailable: true,
+    },
+    {
+      hotelId: hotelData[2].hotelId,
+      roomType: 'Standard Room',
+      pricePerNight: '149.99',
+      capacity: 2,
+      isAvailable: true,
+    },
+  ];
+  const roomData = await db.insert(rooms).values(roomValues).returning();
 
-    // Seed Bookings
-    const insertedBookings = await db.insert(bookings).values([
-      {
-        userId: user.userId,
-        roomId: deluxeSuite.roomId,
-        checkInDate: '2023-12-15',
-        checkOutDate: '2023-12-17',
-        totalAmount: '700.00',
-        bookingStatus: 'Confirmed',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        userId: user.userId,
-        roomId: standardRoom.roomId,
-        checkInDate: '2023-11-01',
-        checkOutDate: '2023-11-05',
-        totalAmount: '480.00',
-        bookingStatus: 'Cancelled',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ]).returning();
+  // Seed Entity Amenities (connecting amenities to rooms/hotels)
+  console.log('Seeding entity amenities...');
+  await db.insert(entityAmenities).values([
+    // Hotel amenities (shared by all rooms in the hotel)
+    { amenityId: amenityData[0].amenityId, entityId: hotelData[0].hotelId, entityType: amenityEntityTypeEnum.enumValues[1] }, // Grand Plaza - WiFi
+    { amenityId: amenityData[1].amenityId, entityId: hotelData[0].hotelId, entityType: amenityEntityTypeEnum.enumValues[1] }, // Grand Plaza - Pool
+    { amenityId: amenityData[2].amenityId, entityId: hotelData[0].hotelId, entityType: amenityEntityTypeEnum.enumValues[1] }, // Grand Plaza - Gym
+    { amenityId: amenityData[3].amenityId, entityId: hotelData[0].hotelId, entityType: amenityEntityTypeEnum.enumValues[1] }, // Grand Plaza - Restaurant
+    { amenityId: amenityData[4].amenityId, entityId: hotelData[0].hotelId, entityType: amenityEntityTypeEnum.enumValues[1] }, // Grand Plaza - Spa
+    { amenityId: amenityData[5].amenityId, entityId: hotelData[0].hotelId, entityType: amenityEntityTypeEnum.enumValues[1] }, // Grand Plaza - Parking
 
-    const [booking1, booking2] = insertedBookings;
+    { amenityId: amenityData[0].amenityId, entityId: hotelData[1].hotelId, entityType: amenityEntityTypeEnum.enumValues[1] }, // Beachside - WiFi
+    { amenityId: amenityData[1].amenityId, entityId: hotelData[1].hotelId, entityType: amenityEntityTypeEnum.enumValues[1] }, // Beachside - Pool
+    { amenityId: amenityData[3].amenityId, entityId: hotelData[1].hotelId, entityType: amenityEntityTypeEnum.enumValues[1] }, // Beachside - Restaurant
+    { amenityId: amenityData[5].amenityId, entityId: hotelData[1].hotelId, entityType: amenityEntityTypeEnum.enumValues[1] }, // Beachside - Parking
 
-    // Seed Payments
-    await db.insert(payments).values([
-      {
-        bookingId: booking1.bookingId,
-        amount: '700.00',
-        paymentStatus: 'Completed',
-        paymentDate: new Date(), 
-        paymentMethod: 'credit_card',
-        transactionId: 'pmt_123456',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        bookingId: booking2.bookingId,
-        amount: '480.00',
-        paymentStatus: 'Completed',
-        paymentDate: new Date(), 
-        paymentMethod: 'paypal',
-        transactionId: 'pmt_789012',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ]);
+    { amenityId: amenityData[0].amenityId, entityId: hotelData[2].hotelId, entityType: amenityEntityTypeEnum.enumValues[1] }, // Mountain View - WiFi
+    { amenityId: amenityData[2].amenityId, entityId: hotelData[2].hotelId, entityType: amenityEntityTypeEnum.enumValues[1] }, // Mountain View - Gym
+    { amenityId: amenityData[5].amenityId, entityId: hotelData[2].hotelId, entityType: amenityEntityTypeEnum.enumValues[1] }, // Mountain View - Parking
 
-    // Seed Support Tickets
-    await db.insert(customerSupportTickets).values([
-      {
-        userId: user.userId,
-        subject: 'Late check-out request',
-        description: 'Can I have a late check-out at 2pm?',
-        status: 'Open',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        userId: admin.userId,
-        subject: 'System feedback',
-        description: 'The dashboard needs performance improvements',
-        status: 'Resolved',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ]);
+    // Room-specific amenities
+    { amenityId: amenityData[6].amenityId, entityId: roomData[0].roomId, entityType: amenityEntityTypeEnum.enumValues[0] }, // Deluxe King - TV
+    { amenityId: amenityData[7].amenityId, entityId: roomData[0].roomId, entityType: amenityEntityTypeEnum.enumValues[0] }, // Deluxe King - AC
+    { amenityId: amenityData[8].amenityId, entityId: roomData[0].roomId, entityType: amenityEntityTypeEnum.enumValues[0] }, // Deluxe King - Mini Bar
+    { amenityId: amenityData[10].amenityId, entityId: roomData[0].roomId, entityType: amenityEntityTypeEnum.enumValues[0] }, // Deluxe King - King Bed
 
-    console.log('✅ Database seeded successfully!');
-  } catch (error) {
-    console.error('❌ Error seeding database:', error);
-    throw error; 
-  }
-};
+    { amenityId: amenityData[6].amenityId, entityId: roomData[1].roomId, entityType: amenityEntityTypeEnum.enumValues[0] }, // Executive Suite - TV
+    { amenityId: amenityData[7].amenityId, entityId: roomData[1].roomId, entityType: amenityEntityTypeEnum.enumValues[0] }, // Executive Suite - AC
+    { amenityId: amenityData[9].amenityId, entityId: roomData[1].roomId, entityType: amenityEntityTypeEnum.enumValues[0] }, // Executive Suite - Room Service
+    { amenityId: amenityData[12].amenityId, entityId: roomData[1].roomId, entityType: amenityEntityTypeEnum.enumValues[0] }, // Executive Suite - Balcony
 
-// Execute and handle exit explicitly
+    { amenityId: amenityData[6].amenityId, entityId: roomData[2].roomId, entityType: amenityEntityTypeEnum.enumValues[0] }, // Standard Double - TV
+    { amenityId: amenityData[7].amenityId, entityId: roomData[2].roomId, entityType: amenityEntityTypeEnum.enumValues[0] }, // Standard Double - AC
+    { amenityId: amenityData[11].amenityId, entityId: roomData[2].roomId, entityType: amenityEntityTypeEnum.enumValues[0] }, // Standard Double - Double Bed
+  ]).execute();
+
+  // Seed Bookings
+  console.log('Seeding bookings...');
+  const bookingData = await db.insert(bookings).values([
+    {
+      userId: userData[0].userId,
+      roomId: roomData[0].roomId,
+      checkInDate: new Date('2023-12-15').toISOString(),
+      checkOutDate: new Date('2023-12-20').toISOString(),
+      totalAmount: '1499.95',
+      bookingStatus: bookingStatusEnum.enumValues[1], // 'Confirmed'
+    },
+    {
+      userId: userData[1].userId,
+      roomId: roomData[3].roomId,
+      checkInDate: new Date('2024-01-10').toISOString(),
+      checkOutDate: new Date('2024-01-15').toISOString(),
+      totalAmount: '1749.95',
+      bookingStatus: bookingStatusEnum.enumValues[0], // 'Pending'
+    },
+    {
+      userId: userData[0].userId,
+      roomId: roomData[5].roomId,
+      checkInDate: new Date('2024-02-05').toISOString(),
+      checkOutDate: new Date('2024-02-10').toISOString(),
+      totalAmount: '1249.95',
+      bookingStatus: bookingStatusEnum.enumValues[1], // 'Confirmed'
+    },
+  ]).returning();
+
+  // Seed Payments
+  console.log('Seeding payments...');
+  await db.insert(payments).values([
+    {
+      bookingId: bookingData[0].bookingId,
+      amount: '1499.95',
+      paymentStatus: paymentStatusEnum.enumValues[1], // 'Completed'
+      paymentDate: new Date('2023-11-20'),
+      paymentMethod: 'Credit Card',
+      transactionId: 'PAY123456789',
+    },
+    {
+      bookingId: bookingData[1].bookingId,
+      amount: '500.00',
+      paymentStatus: paymentStatusEnum.enumValues[0], // 'Pending'
+      paymentDate: new Date('2024-01-10'),
+      paymentMethod: 'PayPal',
+      transactionId: 'PAY987654321',
+    },
+    {
+      bookingId: bookingData[2].bookingId,
+      amount: '1249.95',
+      paymentStatus: paymentStatusEnum.enumValues[1], // 'Completed'
+      paymentDate: new Date('2024-01-15'),
+      paymentMethod: 'Credit Card',
+      transactionId: 'PAY456789123',
+    },
+  ]).execute();
+
+  // Seed Customer Support Tickets
+  console.log('Seeding customer support tickets...');
+  await db.insert(customerSupportTickets).values([
+    {
+      userId: userData[0].userId,
+      subject: 'Room change request',
+      description: 'I would like to request a room on a higher floor if possible.',
+      status: ticketStatusEnum.enumValues[0], // 'Open'
+    },
+    {
+      userId: userData[1].userId,
+      subject: 'Special dietary requirements',
+      description: 'I have gluten allergies and would like to know about meal options.',
+      status: ticketStatusEnum.enumValues[1], // 'Resolved'
+    },
+  ]).execute();
+
+  console.log('Database seeding completed successfully!');
+}
+
 seedDatabase()
-  .then(() => process.exit(0))
-  .catch(() => process.exit(1));
+  .catch((e) => {
+    console.error('Error seeding database:', e);
+    process.exit(1);
+  });

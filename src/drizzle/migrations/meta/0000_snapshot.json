@@ -1,9 +1,129 @@
 {
-  "id": "49e01f97-30d9-46c4-9db7-a4e335ebc26e",
+  "id": "77a60488-59ae-432b-95d1-46ee5e1cef84",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
+    "public.addresses": {
+      "name": "addresses",
+      "schema": "",
+      "columns": {
+        "addressId": {
+          "name": "addressId",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "entityId": {
+          "name": "entityId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entityType": {
+          "name": "entityType",
+          "type": "addressEntityType",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "street": {
+          "name": "street",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "city": {
+          "name": "city",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "state": {
+          "name": "state",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "postalCode": {
+          "name": "postalCode",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "country": {
+          "name": "country",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.amenities": {
+      "name": "amenities",
+      "schema": "",
+      "columns": {
+        "amenityId": {
+          "name": "amenityId",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "icon": {
+          "name": "icon",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.bookings": {
       "name": "bookings",
       "schema": "",
@@ -46,7 +166,7 @@
         },
         "bookingStatus": {
           "name": "bookingStatus",
-          "type": "booking_status",
+          "type": "bookingStatus",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
@@ -131,7 +251,7 @@
         },
         "status": {
           "name": "status",
-          "type": "ticket_status",
+          "type": "ticketStatus",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
@@ -173,6 +293,65 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.entityAmenities": {
+      "name": "entityAmenities",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amenityId": {
+          "name": "amenityId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "entityId": {
+          "name": "entityId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entityType": {
+          "name": "entityType",
+          "type": "amenityEntityType",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "entityAmenities_amenityId_amenities_amenityId_fk": {
+          "name": "entityAmenities_amenityId_amenities_amenityId_fk",
+          "tableFrom": "entityAmenities",
+          "tableTo": "amenities",
+          "columnsFrom": [
+            "amenityId"
+          ],
+          "columnsTo": [
+            "amenityId"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.hotels": {
       "name": "hotels",
       "schema": "",
@@ -194,12 +373,6 @@
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
-        },
-        "address": {
-          "name": "address",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
         },
         "contactPhone": {
           "name": "contactPhone",
@@ -266,7 +439,7 @@
         },
         "paymentStatus": {
           "name": "paymentStatus",
-          "type": "payment_status",
+          "type": "paymentStatus",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
@@ -360,12 +533,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "amenities": {
-          "name": "amenities",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": false
-        },
         "isAvailable": {
           "name": "isAvailable",
           "type": "boolean",
@@ -443,15 +610,9 @@
           "primaryKey": false,
           "notNull": false
         },
-        "address": {
-          "name": "address",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "role": {
           "name": "role",
-          "type": "user_role",
+          "type": "userRole",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": false,
@@ -490,8 +651,24 @@
     }
   },
   "enums": {
-    "public.booking_status": {
-      "name": "booking_status",
+    "public.addressEntityType": {
+      "name": "addressEntityType",
+      "schema": "public",
+      "values": [
+        "user",
+        "hotel"
+      ]
+    },
+    "public.amenityEntityType": {
+      "name": "amenityEntityType",
+      "schema": "public",
+      "values": [
+        "room",
+        "hotel"
+      ]
+    },
+    "public.bookingStatus": {
+      "name": "bookingStatus",
       "schema": "public",
       "values": [
         "Pending",
@@ -499,8 +676,8 @@
         "Cancelled"
       ]
     },
-    "public.payment_status": {
-      "name": "payment_status",
+    "public.paymentStatus": {
+      "name": "paymentStatus",
       "schema": "public",
       "values": [
         "Pending",
@@ -508,19 +685,20 @@
         "Failed"
       ]
     },
-    "public.ticket_status": {
-      "name": "ticket_status",
+    "public.ticketStatus": {
+      "name": "ticketStatus",
       "schema": "public",
       "values": [
         "Open",
         "Resolved"
       ]
     },
-    "public.user_role": {
-      "name": "user_role",
+    "public.userRole": {
+      "name": "userRole",
       "schema": "public",
       "values": [
         "user",
+        "owner",
         "admin"
       ]
     }
