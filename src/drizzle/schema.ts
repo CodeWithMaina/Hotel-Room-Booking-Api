@@ -15,10 +15,10 @@ import {
 import { relations } from 'drizzle-orm';
 
 // ====================== ENUMS ======================
-export const userRoleEnum = pgEnum('user_role', ['user', 'admin']);
-export const bookingStatusEnum = pgEnum('booking_status', ['Pending', 'Confirmed', 'Cancelled']);
-export const paymentStatusEnum = pgEnum('payment_status', ['Pending', 'Completed', 'Failed']);
-export const ticketStatusEnum = pgEnum('ticket_status', ['Open', 'Resolved']);
+export const userRoleEnum = pgEnum('userRole', ['user','owner', 'admin']);
+export const bookingStatusEnum = pgEnum('bookingStatus', ['Pending', 'Confirmed', 'Cancelled']);
+export const paymentStatusEnum = pgEnum('paymentStatus', ['Pending', 'Completed', 'Failed']);
+export const ticketStatusEnum = pgEnum('ticketStatus', ['Open', 'Resolved']);
 
 // ====================== TABLES ======================
 export const users = pgTable('users', {

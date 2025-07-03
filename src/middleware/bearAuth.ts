@@ -73,6 +73,9 @@ export const adminAuth = (req: Request, res: Response, next: NextFunction) =>
 export const userAuth = (req: Request, res: Response, next: NextFunction) =>
   authMiddleware(req, res, next, "user");
 
+export const ownerAuth = (req: Request, res: Response, next: NextFunction) =>
+  authMiddleware(req, res, next, "user");
+
 // General authentication - no specific role required
 export const optionalAuth = (req: Request, res: Response, next: NextFunction) =>
   authMiddleware(req, res, next);

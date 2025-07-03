@@ -34,9 +34,11 @@ export const createUser: RequestHandler = async (
     const newUser = await createUserServices(user);
     const results = await sendNotificationEmail(
       user.email,
-      user.name,
       "Account created successfully",
-      "Welcome to our Hotel service</b>"
+      `${user.firstName} ${user.lastName}`,
+      "Welcome to our Hotel service! Your account has been successfully created.",
+      "http://yourwebsite.com/dashboard",
+      "Go to Dashboard" // Optional: Add button text
     );
     if (!results) {
       res.status(500).json({ error: "Failed to send notification email" });
