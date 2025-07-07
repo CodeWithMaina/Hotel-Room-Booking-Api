@@ -5,6 +5,10 @@ import {
   createHotelService,
   updateHotelService,
   deleteHotelService,
+  getHotelAmenitiesDetailsService,
+  getHotelEntityAmenitiesService,
+  getHotelAddressService,
+  getHotelFullDetailsService,
 } from "./hotel.service";
 import { THotelInsert, THotelSelect } from "../drizzle/schema";
 
@@ -15,7 +19,7 @@ export const getHotelsController = async (req: Request, res: Response) => {
       res.status(404).json({ message: "No hotels found" });
       return;
     }
-    res.status(200).json({"Hotels": hotels});
+    res.status(200).json(hotels);
   } catch (error: any) {
     res.status(500).json({
       message: "Failed to fetch hotels",
@@ -49,7 +53,7 @@ export const getHotelByIdController = async (req: Request, res: Response) => {
 export const createHotelController = async (req: Request, res: Response) => {
   try {
     const hotelData: THotelInsert = req.body;
-    if (!hotelData.name || !hotelData.address) {
+    if (!hotelData.name) {
       res.status(400).json({ message: "Missing required fields" });
       return;
     }
@@ -109,6 +113,85 @@ export const deleteHotelController = async (req: Request, res: Response) => {
   } catch (error: any) {
     res.status(500).json({
       message: "Failed to delete hotel",
+      error: error.message,
+    });
+  }
+};
+
+
+
+export const getHotelAddressController = async (req: Request, res: Response) => {
+  try {
+    const hotelId = parseInt(req.params.hotelId);
+    if (isNaN(hotelId)) {
+       res.status(400).json({ message: "Invalid hotel ID" });
+       return;
+    }
+
+    const address = await getHotelAddressService(hotelId);
+    if (!address) {
+       res.status(404).json({ message: "Address not found for this hotel" });
+       return;
+    }
+    res.status(200).json(address);
+  } catch (error: any) {
+    res.status(500).json({
+      message: "Failed to fetch hotel address",
+      error: error.message,
+    });
+  }
+};
+
+export const getHotelEntityAmenitiesController = async (req: Request, res: Response) => {
+  try {
+    const hotelId = parseInt(req.params.hotelId);
+    if (isNaN(hotelId)) {
+       res.status(400).json({ message: "Invalid hotel ID" });
+       return;
+    }
+
+    const entityAmenities = await getHotelEntityAmenitiesService(hotelId);
+    res.status(200).json(entityAmenities);
+  } catch (error: any) {
+    res.status(500).json({
+      message: "Failed to fetch hotel entity amenities",
+      error: error.message,
+    });
+  }
+};
+
+export const getHotelAmenitiesDetailsController = async (req: Request, res: Response) => {
+  try {
+    const hotelId = parseInt(req.params.hotelId);
+    if (isNaN(hotelId)) {
+       res.status(400).json({ message: "Invalid hotel ID" });
+       return;
+    }
+
+    const amenities = await getHotelAmenitiesDetailsService(hotelId);
+    res.status(200).json(amenities);
+  } catch (error: any) {
+    res.status(500).json({
+      message: "Failed to fetch hotel amenities details",
+      error: error.message,
+    });
+  }
+};
+
+
+export const getHotelFullDetailsController = async (req: Request, res: Response) => {
+  try {
+    const hotelId = parseInt(req.params.hotelId);
+    if (isNaN(hotelId)) {
+       res.status(400).json({ message: "Invalid hotel ID" });
+       return;
+    }
+
+    const hotelDetails = await getHotelFullDetailsService(hotelId);
+    res.status(200).json(hotelDetails);
+  } catch (error: any) {
+    res.status(500).json({
+      message: "Failed to fetch hotel details",
       error: error.message,
     });
   }

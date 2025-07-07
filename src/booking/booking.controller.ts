@@ -7,6 +7,7 @@ import {
   deleteBookingService,
 } from "./booking.service";
 import { TBookingInsert } from "../drizzle/schema";
+import { TBookingInsertForm } from "../types/bookingTypes";
 
 export const getBookingsController = async (req: Request, res: Response) => {
   try {
@@ -48,22 +49,55 @@ export const getBookingByIdController = async (req: Request, res: Response) => {
 
 export const createBookingController = async (req: Request, res: Response) => {
   try {
-    const bookingData: TBookingInsert = req.body;
-    if (!bookingData.userId || !bookingData.roomId || !bookingData.checkInDate || 
-        !bookingData.checkOutDate || !bookingData.totalAmount) {
-      res.status(400).json({ message: "Missing required fields" });
-      return;
+    let bookingData: TBookingInsertForm = req.body;
+
+    if (
+      !bookingData.userId ||
+      !bookingData.roomId ||
+      !bookingData.checkInDate ||
+      !bookingData.checkOutDate ||
+      !bookingData.totalAmount
+    ) {
+       res.status(400).json({ message: "Missing required fields" });
+       return;
     }
 
+    // ✅ Coerce totalAmount to string safely
+    bookingData = {
+      ...bookingData,
+      totalAmount: parseFloat(bookingData.totalAmount).toFixed(2), // ensure string format
+    };
+
     const newBooking = await createBookingService(bookingData);
-    res.status(201).json(newBooking);
+     res.status(201).json(newBooking);
+     return;
   } catch (error: any) {
+    console.error("Booking creation error:", error);
     res.status(500).json({
       message: "Failed to create booking",
-      error: error.message,
+      error: error.message || error,
     });
   }
 };
+
+// export const createBookingController = async (req: Request, res: Response) => {
+//   try {
+//     const bookingData: TBookingInsertForm = req.body;
+//     if (!bookingData.userId || !bookingData.roomId || !bookingData.checkInDate || 
+//         !bookingData.checkOutDate || !bookingData.totalAmount) {
+//       res.status(400).json({ message: "Missing required fields" });
+//       return;
+//     }
+
+//     const newBooking = await createBookingService(bookingData);
+//     res.status(201).json(newBooking);
+//   } catch (error: any) {
+//     res.status(500).json({
+//       message: "Failed to create booking",
+//       error: error.message,
+//     });
+//   }
+// };
 
 export const updateBookingController = async (req: Request, res: Response) => {
   try {

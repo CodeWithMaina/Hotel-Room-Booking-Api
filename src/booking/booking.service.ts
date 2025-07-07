@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { bookings } from "../drizzle/schema";
 import { TBookingInsert, TBookingSelect } from "../drizzle/schema";
 import { TBookingFindParams, TBookingsResponse } from "../types/types";
+import { TBookingInsertForm } from "../types/bookingTypes";
 
 export const getBookingsService = async (): Promise<TBookingsResponse> => {
     // You can replace 'any[]' with a more specific type if you define one that matches the shape returned by findMany
@@ -51,8 +52,14 @@ export const getBookingByIdService = async (bookingId: number): Promise<TBooking
     return result || null;
 };
 
-export const createBookingService = async (bookingData: TBookingInsert): Promise<TBookingSelect> => {
-    const result = await db.insert(bookings).values(bookingData).returning();
+export const createBookingService = async (
+    bookingData: TBookingInsertForm
+): Promise<TBookingSelect> => {
+
+    const result = await db.insert(bookings)
+        .values(bookingData)
+        .returning();
+    
     return result[0];
 };
 

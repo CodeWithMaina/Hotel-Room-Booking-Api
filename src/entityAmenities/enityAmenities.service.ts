@@ -1,7 +1,8 @@
 import db from "../drizzle/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { entityAmenities } from "../drizzle/schema";
 import { TEntityAmenityInsert, TEntityAmenitySelect } from "../drizzle/schema";
+import { TEntity } from "../types/entityTypes";
 
 export const getEntityAmenitiesService = async (): Promise<TEntityAmenitySelect[]> => {
     return await db.query.entityAmenities.findMany({
@@ -12,6 +13,16 @@ export const getEntityAmenitiesService = async (): Promise<TEntityAmenitySelect[
         }
     });
 };
+
+// Get all amenities based on entities
+export const getAmenitiesForOneEntity = async (entityId: number, entityType: TEntity)=>{
+    return await db.query.entityAmenities.findMany({
+        where: and(
+            eq(entityAmenities.entityId, entityId),
+            eq(entityAmenities.entityType, entityType)
+        )
+    })
+}
 
 export const getEntityAmenityByIdService = async (entityAmenityId: number): Promise<TEntityAmenitySelect | null> => {
     const result = await db.query.entityAmenities.findFirst({

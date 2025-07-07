@@ -18,6 +18,7 @@ import { relations } from 'drizzle-orm';
 export const userRoleEnum = pgEnum('userRole', ['user','owner', 'admin']);
 export const bookingStatusEnum = pgEnum('bookingStatus', ['Pending', 'Confirmed', 'Cancelled']);
 export const paymentStatusEnum = pgEnum('paymentStatus', ['Pending', 'Completed', 'Failed']);
+export const paymentMethodEnum = pgEnum('paymentMethod', ['card', 'mpesa']);
 export const ticketStatusEnum = pgEnum('ticketStatus', ['Open', 'Resolved']);
 export const addressEntityTypeEnum = pgEnum('addressEntityType', ['user', 'hotel']);
 export const amenityEntityTypeEnum = pgEnum('amenityEntityType', ['room', 'hotel']);
@@ -106,7 +107,7 @@ export const payments = pgTable('payments', {
   amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),
   paymentStatus: paymentStatusEnum('paymentStatus').notNull(),
   paymentDate: timestamp('paymentDate'),
-  paymentMethod: varchar('paymentMethod', { length: 50 }),
+  paymentMethod: paymentMethodEnum('paymentMethod'),
   transactionId: varchar('transactionId', { length: 255 }),
   createdAt: timestamp('createdAt').defaultNow(),
   updatedAt: timestamp('updatedAt').defaultNow(),

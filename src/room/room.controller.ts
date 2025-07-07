@@ -5,6 +5,8 @@ import {
   createRoomService,
   updateRoomService,
   deleteRoomService,
+  getRoomByHotelIdService,
+  getRoomWithAmenitiesService,
 } from "./room.service";
 import { TRoomInsert, TRoomSelect } from "../drizzle/schema";
 
@@ -109,6 +111,52 @@ export const deleteRoomController = async (req: Request, res: Response) => {
   } catch (error: any) {
     res.status(500).json({
       message: "Failed to delete room",
+      error: error.message,
+    });
+  }
+};
+
+
+export const getRoomByHotelIdController = async (req: Request, res: Response) => {
+  try {
+    const hotelId = parseInt(req.params.id);
+    if (isNaN(hotelId)) {
+      res.status(400).json({ message: "Invalid hotel ID" });
+      return;
+    }
+
+    const rooms = await getRoomByHotelIdService(hotelId);
+    if (!rooms) {
+      res.status(404).json({ message: "Room not found" });
+      return;
+    }
+    res.status(200).json(rooms);
+  } catch (error: any) {
+    res.status(500).json({
+      message: "Failed to fetch room",
+      error: error.message,
+    });
+  }
+};
+
+export const getRoomWithAmenitiesController = async (req: Request, res: Response) => {
+  try {
+    const roomId = parseInt(req.params.id);
+    if (isNaN(roomId)) {
+       res.status(400).json({ message: "Invalid room ID" });
+       return;
+    }
+
+    const roomDetails = await getRoomWithAmenitiesService(roomId);
+    if (!roomDetails) {
+       res.status(404).json({ message: "Room not found" });
+       return;
+    }
+
+    res.status(200).json(roomDetails);
+  } catch (error: any) {
+    res.status(500).json({
+      message: "Failed to fetch room details",
       error: error.message,
     });
   }
