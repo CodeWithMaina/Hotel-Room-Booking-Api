@@ -82,3 +82,12 @@ export const deleteBookingService = async (bookingId: number): Promise<TBookingS
     
     return result[0] || null;
 };
+
+export const getBookingsByUserIdService = async (userId: number) => {
+    return await db.query.bookings.findMany({
+        where: eq(bookings.userId, userId),
+        with: {
+            room: true,
+        }
+    })
+}

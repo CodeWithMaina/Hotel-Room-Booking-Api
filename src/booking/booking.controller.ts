@@ -5,6 +5,7 @@ import {
   createBookingService,
   updateBookingService,
   deleteBookingService,
+  getBookingsByUserIdService,
 } from "./booking.service";
 import { TBookingInsert } from "../drizzle/schema";
 import { TBookingInsertForm } from "../types/bookingTypes";
@@ -12,11 +13,11 @@ import { TBookingInsertForm } from "../types/bookingTypes";
 export const getBookingsController = async (req: Request, res: Response) => {
   try {
     const bookings = await getBookingsService();
-    if (bookings == null || bookings.length === 0) {
+    if (bookings == null) {
       res.status(404).json({ message: "No bookings found" });
       return;
     }
-    res.status(200).json({"Bookings": bookings});
+    res.status(200).json({ Bookings: bookings });
   } catch (error: any) {
     res.status(500).json({
       message: "Failed to fetch bookings",
@@ -58,19 +59,18 @@ export const createBookingController = async (req: Request, res: Response) => {
       !bookingData.checkOutDate ||
       !bookingData.totalAmount
     ) {
-       res.status(400).json({ message: "Missing required fields" });
-       return;
+      res.status(400).json({ message: "Missing required fields" });
+      return;
     }
 
-    // ✅ Coerce totalAmount to string safely
     bookingData = {
       ...bookingData,
-      totalAmount: parseFloat(bookingData.totalAmount).toFixed(2), // ensure string format
+      totalAmount: parseFloat(bookingData.totalAmount).toFixed(2),
     };
 
     const newBooking = await createBookingService(bookingData);
-     res.status(201).json(newBooking);
-     return;
+    res.status(201).json(newBooking);
+    return;
   } catch (error: any) {
     console.error("Booking creation error:", error);
     res.status(500).json({
@@ -79,25 +79,6 @@ export const createBookingController = async (req: Request, res: Response) => {
     });
   }
 };
-
-// export const createBookingController = async (req: Request, res: Response) => {
-//   try {
-//     const bookingData: TBookingInsertForm = req.body;
-//     if (!bookingData.userId || !bookingData.roomId || !bookingData.checkInDate || 
-//         !bookingData.checkOutDate || !bookingData.totalAmount) {
-//       res.status(400).json({ message: "Missing required fields" });
-//       return;
-//     }
-
-//     const newBooking = await createBookingService(bookingData);
-//     res.status(201).json(newBooking);
-//   } catch (error: any) {
-//     res.status(500).json({
-//       message: "Failed to create booking",
-//       error: error.message,
-//     });
-//   }
-// };
 
 export const updateBookingController = async (req: Request, res: Response) => {
   try {
@@ -146,5 +127,44 @@ export const deleteBookingController = async (req: Request, res: Response) => {
       message: "Failed to delete booking",
       error: error.message,
     });
+  }
+};
+
+export const getBookingsByUserIdController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const userId = parseInt(req.params.userId);
+
+    if (isNaN(userId)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid user ID format",
+      });
+      return;
+    }
+
+    const bookings = await getBookingsByUserIdService(userId);
+
+    if (!bookings || bookings.length === 0) {
+      res.status(404).json({
+        success: false,
+        message: "No bookings found for this user",
+      });
+      return;
+    }
+
+    res.status(200).json(bookings);
+    return;
+  } catch (error: any) {
+    console.error("Error fetching bookings by user ID:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve bookings",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+    return;
   }
 };

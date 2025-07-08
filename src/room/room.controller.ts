@@ -17,7 +17,7 @@ export const getRoomsController = async (req: Request, res: Response) => {
       res.status(404).json({ message: "No rooms found" });
       return;
     }
-    res.status(200).json({"Rooms": rooms});
+    res.status(200).json(rooms);
   } catch (error: any) {
     res.status(500).json({
       message: "Failed to fetch rooms",

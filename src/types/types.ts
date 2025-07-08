@@ -68,4 +68,5 @@ export type TBookingFindParams = {
       };
     };
   };
+  where?: any; 
 };
