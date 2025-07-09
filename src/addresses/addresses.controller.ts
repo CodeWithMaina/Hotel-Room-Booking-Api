@@ -5,8 +5,10 @@ import {
   createAddressService,
   updateAddressService,
   deleteAddressService,
+  getEntityAddressService,
 } from "./addresses.service";
 import { TAddressInsert, TAddressSelect } from "../drizzle/schema";
+import { TAddressEntity } from "../types/entityTypes";
 
 export const getAddressesController = async (req: Request, res: Response) => {
   try {
@@ -15,7 +17,7 @@ export const getAddressesController = async (req: Request, res: Response) => {
       res.status(404).json({ message: "No addresses found" });
       return;
     }
-    res.status(200).json({"Addresses": addresses});
+    res.status(200).json({ Addresses: addresses });
   } catch (error: any) {
     res.status(500).json({
       message: "Failed to fetch addresses",
@@ -49,8 +51,14 @@ export const getAddressByIdController = async (req: Request, res: Response) => {
 export const createAddressController = async (req: Request, res: Response) => {
   try {
     const addressData: TAddressInsert = req.body;
-    if (!addressData.entityId || !addressData.entityType || !addressData.street || 
-        !addressData.city || !addressData.postalCode || !addressData.country) {
+    if (
+      !addressData.entityId ||
+      !addressData.entityType ||
+      !addressData.street ||
+      !addressData.city ||
+      !addressData.postalCode ||
+      !addressData.country
+    ) {
       res.status(400).json({ message: "Missing required fields" });
       return;
     }
@@ -110,6 +118,40 @@ export const deleteAddressController = async (req: Request, res: Response) => {
   } catch (error: any) {
     res.status(500).json({
       message: "Failed to delete address",
+      error: error.message,
+    });
+  }
+};
+
+export const getEntityAddressController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { entityId, entityType } = req.params;
+
+    const parsedEntityId = parseInt(entityId, 10);
+    if (isNaN(parsedEntityId)) {
+      res.status(400).json({ error: "entityId must be a valid number" });
+      return;
+    }
+
+    if (entityType !== "hotel" && entityType !== "user") {
+      res
+        .status(400)
+        .json({ error: 'entityType must be either "hotel" or "user"' });
+      return;
+    }
+
+    const addresses = await getEntityAddressService(
+      parsedEntityId,
+      entityType as TAddressEntity
+    );
+
+    res.status(200).json(addresses);
+  } catch (error: any) {
+    res.status(500).json({
+      message: "Failed to fetch address",
       error: error.message,
     });
   }

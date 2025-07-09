@@ -17,7 +17,7 @@ export const getBookingsController = async (req: Request, res: Response) => {
       res.status(404).json({ message: "No bookings found" });
       return;
     }
-    res.status(200).json({ Bookings: bookings });
+    res.status(200).json(bookings);
   } catch (error: any) {
     res.status(500).json({
       message: "Failed to fetch bookings",

@@ -1,7 +1,8 @@
 import db from "../drizzle/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { addresses } from "../drizzle/schema";
 import { TAddressInsert, TAddressSelect } from "../drizzle/schema";
+import { TAddressEntity } from "../types/entityTypes";
 
 export const getAddressesService = async (): Promise<TAddressSelect[]> => {
   return await db.query.addresses.findMany({});
@@ -45,4 +46,14 @@ export const deleteAddressService = async (
     .returning();
 
   return result[0] || null;
+};
+
+// Get address for either hotel or user
+export const getEntityAddressService = async (entityId: number, entityType: TAddressEntity ): Promise<TAddressSelect[]> => {
+  return await db.query.addresses.findMany({
+    where: and(
+      eq(addresses.entityId, entityId),
+      eq(addresses.entityType, entityType)
+    )
+  });
 };

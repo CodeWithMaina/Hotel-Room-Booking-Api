@@ -15,7 +15,7 @@ export const getUsersController = async (req: Request, res: Response) => {
       res.status(404).json({ message: "No users found" });
       return;
     } else {
-      res.status(200).json({"Users":users});
+      res.status(200).json(users);
       return;
     }
   } catch (error: any) {
