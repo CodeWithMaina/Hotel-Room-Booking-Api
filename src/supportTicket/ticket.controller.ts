@@ -5,8 +5,13 @@ import {
   createTicketService,
   updateTicketService,
   deleteTicketService,
+  getUserTicketsService,
 } from "./ticket.service";
-import { TCustomerSupportTicketInsert, TCustomerSupportTicketSelect } from "../drizzle/schema";
+import {
+  TCustomerSupportTicketInsert,
+  TCustomerSupportTicketSelect,
+} from "../drizzle/schema";
+import { TCreateTicketSchema } from "../validation/ticketSchema";
 
 export const getTicketsController = async (req: Request, res: Response) => {
   try {
@@ -15,7 +20,7 @@ export const getTicketsController = async (req: Request, res: Response) => {
       res.status(404).json({ message: "No tickets found" });
       return;
     }
-    res.status(200).json({"Tickets": tickets});
+    res.status(200).json(tickets);
   } catch (error: any) {
     res.status(500).json({
       message: "Failed to fetch tickets",
@@ -48,7 +53,8 @@ export const getTicketByIdController = async (req: Request, res: Response) => {
 
 export const createTicketController = async (req: Request, res: Response) => {
   try {
-    const ticketData: TCustomerSupportTicketInsert = req.body;
+    const ticketData: TCreateTicketSchema = req.body;
+    console.log(ticketData)
     if (!ticketData.userId || !ticketData.subject || !ticketData.description) {
       res.status(400).json({ message: "Missing required fields" });
       return;
@@ -110,6 +116,32 @@ export const deleteTicketController = async (req: Request, res: Response) => {
     res.status(500).json({
       message: "Failed to delete ticket",
       error: error.message,
+    });
+  }
+};
+
+export const getUserTicketsController = async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+
+    if (isNaN(userId)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid user ID",
+      });
+      return;
+    }
+
+    const tickets: TCustomerSupportTicketSelect[] = await getUserTicketsService(
+      userId
+    );
+
+    res.status(200).json(tickets);
+  } catch (error) {
+    console.error("Error fetching user tickets:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
     });
   }
 };

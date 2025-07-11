@@ -1,6 +1,6 @@
 {
-  "id": "e93cff63-09ba-46a3-8403-beef53d05d44",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "91e881b1-506a-424f-9a3a-7df42d893d69",
+  "prevId": "e93cff63-09ba-46a3-8403-beef53d05d44",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -381,6 +381,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "thumbnail": {
+          "name": "thumbnail",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "contactPhone": {
           "name": "contactPhone",
           "type": "varchar(20)",
@@ -541,6 +547,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "thumbnail": {
+          "name": "thumbnail",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "isAvailable": {
           "name": "isAvailable",
           "type": "boolean",
@@ -605,6 +617,12 @@
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true
+        },
+        "profileImage": {
+          "name": "profileImage",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
         },
         "password": {
           "name": "password",

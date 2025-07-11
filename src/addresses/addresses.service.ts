@@ -4,6 +4,14 @@ import { addresses } from "../drizzle/schema";
 import { TAddressInsert, TAddressSelect } from "../drizzle/schema";
 import { TAddressEntity } from "../types/entityTypes";
 
+interface TEntyAddress {
+      street: string,
+      city: string,
+      state: string | null,
+      postalCode: string,
+      country: string,
+    }
+
 export const getAddressesService = async (): Promise<TAddressSelect[]> => {
   return await db.query.addresses.findMany({});
 };
@@ -49,11 +57,18 @@ export const deleteAddressService = async (
 };
 
 // Get address for either hotel or user
-export const getEntityAddressService = async (entityId: number, entityType: TAddressEntity ): Promise<TAddressSelect[]> => {
+export const getEntityAddressService = async (entityId: number, entityType: TAddressEntity ): Promise<TEntyAddress[]> => {
   return await db.query.addresses.findMany({
     where: and(
       eq(addresses.entityId, entityId),
       eq(addresses.entityType, entityType)
-    )
+    ),
+    columns:{
+      street: true,
+      city: true,
+      state: true,
+      postalCode: true,
+      country: true,
+    }
   });
 };

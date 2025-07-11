@@ -29,9 +29,9 @@ export const users = pgTable('users', {
   firstName: varchar('firstName', { length: 100 }).notNull(),
   lastName: varchar('lastName', { length: 100 }).notNull(),
   email: varchar('email', { length: 255 }).notNull().unique(),
+  profileImage:varchar('profileImage'),
   password: varchar('password', { length: 255 }).notNull(),
   contactPhone: varchar('contactPhone', { length: 20 }),
-  // Removed address field since we'll use the address table
   role: userRoleEnum('role').default('user'),
   createdAt: timestamp('createdAt').defaultNow(),
   updatedAt: timestamp('updatedAt').defaultNow(),
@@ -41,7 +41,7 @@ export const hotels = pgTable('hotels', {
   hotelId: serial('hotelId').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   location: varchar('location', { length: 255 }),
-  // Removed address field since we'll use the address table
+  thumbnail:varchar('thumbnail'),
   contactPhone: varchar('contactPhone', { length: 20 }),
   category: varchar('category', { length: 100 }),
   rating: numeric('rating', { precision: 2, scale: 1 }),
@@ -84,7 +84,7 @@ export const rooms = pgTable('rooms', {
   roomType: varchar('roomType', { length: 100 }).notNull(),
   pricePerNight: numeric('pricePerNight', { precision: 10, scale: 2 }).notNull(),
   capacity: integer('capacity').notNull(),
-  // Removed amenities array since we'll use the entityAmenities table
+  thumbnail:varchar('thumbnail'),
   isAvailable: boolean('isAvailable').default(true),
   createdAt: timestamp('createdAt').defaultNow(),
 });
@@ -118,7 +118,8 @@ export const customerSupportTickets = pgTable('customerSupportTickets', {
   userId: integer('userId').references(() => users.userId, { onDelete: 'cascade' }),
   subject: varchar('subject', { length: 255 }).notNull(),
   description: text('description').notNull(),
-  status: ticketStatusEnum('status').notNull(),
+  reply: varchar('reply', { length: 255 }),
+  status: ticketStatusEnum('status').default("Open").notNull(),
   createdAt: timestamp('createdAt').defaultNow(),
   updatedAt: timestamp('updatedAt').defaultNow(),
 });

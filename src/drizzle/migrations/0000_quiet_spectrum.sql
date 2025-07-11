@@ -1,6 +1,7 @@
 CREATE TYPE "public"."addressEntityType" AS ENUM('user', 'hotel');--> statement-breakpoint
 CREATE TYPE "public"."amenityEntityType" AS ENUM('room', 'hotel');--> statement-breakpoint
 CREATE TYPE "public"."bookingStatus" AS ENUM('Pending', 'Confirmed', 'Cancelled');--> statement-breakpoint
+CREATE TYPE "public"."paymentMethod" AS ENUM('card', 'mpesa');--> statement-breakpoint
 CREATE TYPE "public"."paymentStatus" AS ENUM('Pending', 'Completed', 'Failed');--> statement-breakpoint
 CREATE TYPE "public"."ticketStatus" AS ENUM('Open', 'Resolved');--> statement-breakpoint
 CREATE TYPE "public"."userRole" AS ENUM('user', 'owner', 'admin');--> statement-breakpoint
@@ -42,7 +43,8 @@ CREATE TABLE "customerSupportTickets" (
 	"userId" integer,
 	"subject" varchar(255) NOT NULL,
 	"description" text NOT NULL,
-	"status" "ticketStatus" NOT NULL,
+	"reply" varchar(255),
+	"status" "ticketStatus" DEFAULT 'Open' NOT NULL,
 	"createdAt" timestamp DEFAULT now(),
 	"updatedAt" timestamp DEFAULT now()
 );
@@ -72,7 +74,7 @@ CREATE TABLE "payments" (
 	"amount" numeric(10, 2) NOT NULL,
 	"paymentStatus" "paymentStatus" NOT NULL,
 	"paymentDate" timestamp,
-	"paymentMethod" varchar(50),
+	"paymentMethod" "paymentMethod",
 	"transactionId" varchar(255),
 	"createdAt" timestamp DEFAULT now(),
 	"updatedAt" timestamp DEFAULT now()
