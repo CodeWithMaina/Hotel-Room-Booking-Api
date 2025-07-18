@@ -64,6 +64,7 @@ export const getEntityAddressService = async (entityId: number, entityType: TAdd
       eq(addresses.entityType, entityType)
     ),
     columns:{
+      addressId: true,
       street: true,
       city: true,
       state: true,

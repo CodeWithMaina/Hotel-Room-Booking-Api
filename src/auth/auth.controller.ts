@@ -68,7 +68,7 @@ export const loginUser: RequestHandler = async (
     const user = await getUserByEmailService(email);
 
     if (!user) {
-      res.status(401).json({ error: "User not found" });
+      res.status(401).json({ error: "Invalid Credentials" });
       return;
     }
 
@@ -123,7 +123,7 @@ export const passwordReset: RequestHandler = async (
 
     const user = await getUserByEmailService(email);
     if (!user) {
-      res.status(404).json({ error: "User not found" });
+      res.status(404).json({ error: "Invalid Credentials" });
       return;
     }
 
@@ -139,7 +139,7 @@ export const passwordReset: RequestHandler = async (
 
     console.log("Generated reset token:", resetToken); // Debug log
 
-    const resetLink = `http://localhost:5000/api/reset/${resetToken}`;
+    const resetLink = `http://localhost:5173/reset-password/${resetToken}`;
     const emailResult = await sendNotificationEmail(
       email,
       "Password Reset Request",

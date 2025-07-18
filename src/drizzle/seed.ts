@@ -33,7 +33,7 @@ async function seedDatabase() {
   await db.delete(customerSupportTickets).execute();
   await db.delete(users).execute();
 
-  // Seed Users
+  // Seed Users with realistic profile images
   console.log("Seeding users...");
   const userData = await db
     .insert(users)
@@ -42,7 +42,8 @@ async function seedDatabase() {
         firstName: "John",
         lastName: "Doe",
         email: "john.doe@example.com",
-        profileImage: "https://example.com/profiles/john.jpg",
+        profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=128&h=128&q=80",
+        bio: "Frequent traveler and hotel enthusiast",
         password: "$2b$10$hashedpassword1",
         contactPhone: "+1234567890",
         role: userRoleEnum.enumValues[0], // 'user'
@@ -51,25 +52,28 @@ async function seedDatabase() {
         firstName: "Jane",
         lastName: "Smith",
         email: "jane.smith@example.com",
-        profileImage: "https://example.com/profiles/jane.jpg",
+        profileImage: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=128&h=128&q=80",
+        bio: "Business traveler with a passion for luxury stays",
         password: "$2b$10$hashedpassword2",
         contactPhone: "+1987654321",
         role: userRoleEnum.enumValues[0], // 'user'
       },
       {
-        firstName: "Hotel",
-        lastName: "Owner",
+        firstName: "Michael",
+        lastName: "Johnson",
         email: "owner@example.com",
-        profileImage: "https://example.com/profiles/owner.jpg",
+        profileImage: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=128&h=128&q=80",
+        bio: "Hotel owner with 15 years of experience in hospitality",
         password: "$2b$10$hashedpassword3",
         contactPhone: "+1122334455",
         role: userRoleEnum.enumValues[1], // 'owner'
       },
       {
-        firstName: "Admin",
-        lastName: "User",
+        firstName: "Sarah",
+        lastName: "Williams",
         email: "admin@example.com",
-        profileImage: "https://example.com/profiles/admin.jpg",
+        profileImage: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=128&h=128&q=80",
+        bio: "System administrator for the hotel booking platform",
         password: "$2b$10$hashedpassword4",
         contactPhone: "+1555666777",
         role: userRoleEnum.enumValues[2], // 'admin'
@@ -77,7 +81,7 @@ async function seedDatabase() {
     ])
     .returning();
 
-  // Seed Hotels
+  // Seed Hotels with realistic images
   console.log("Seeding hotels...");
   const hotelData = await db
     .insert(hotels)
@@ -85,7 +89,12 @@ async function seedDatabase() {
       {
         name: "Grand Plaza Hotel",
         location: "New York",
-        thumbnail: "https://example.com/hotels/grand-plaza.jpg",
+        thumbnail: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+        gallery: [
+          "https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+          "https://images.unsplash.com/photo-1564501049412-61c2a3083791?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+          "https://images.unsplash.com/photo-1516496636080-14fb876e029d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80"
+        ],
         contactPhone: "+12125551234",
         category: "Luxury",
         rating: "4.8",
@@ -93,7 +102,12 @@ async function seedDatabase() {
       {
         name: "Beachside Resort",
         location: "Miami",
-        thumbnail: "https://example.com/hotels/beachside.jpg",
+        thumbnail: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+        gallery: [
+          "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+          "https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+          "https://images.unsplash.com/photo-1564501049412-61c2a3083791?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80"
+        ],
         contactPhone: "+13055556789",
         category: "Resort",
         rating: "4.5",
@@ -101,7 +115,12 @@ async function seedDatabase() {
       {
         name: "Mountain View Lodge",
         location: "Denver",
-        thumbnail: "https://example.com/hotels/mountain-view.jpg",
+        thumbnail: "https://images.unsplash.com/photo-1582719471387-9d5d274e928f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+        gallery: [
+          "https://images.unsplash.com/photo-1564501049412-61c2a3083791?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+          "https://images.unsplash.com/photo-1516496636080-14fb876e029d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+          "https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80"
+        ],
         contactPhone: "+17205551234",
         category: "Boutique",
         rating: "4.2",
@@ -217,7 +236,7 @@ async function seedDatabase() {
     ])
     .returning();
 
-  // Seed Rooms
+  // Seed Rooms with realistic images
   console.log("Seeding rooms...");
   const roomValues = [
     // Grand Plaza Hotel rooms
@@ -226,7 +245,12 @@ async function seedDatabase() {
       roomType: "Deluxe King",
       pricePerNight: "299.99",
       capacity: 2,
-      thumbnail: "https://example.com/rooms/deluxe-king.jpg",
+      thumbnail: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+      gallery: [
+        "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+        "https://images.unsplash.com/photo-1582719471387-9d5d274e928f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+        "https://images.unsplash.com/photo-1564501049412-61c2a3083791?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80"
+      ],
       isAvailable: true,
     },
     {
@@ -234,7 +258,12 @@ async function seedDatabase() {
       roomType: "Executive Suite",
       pricePerNight: "499.99",
       capacity: 4,
-      thumbnail: "https://example.com/rooms/executive-suite.jpg",
+      thumbnail: "https://images.unsplash.com/photo-1566669437685-b4247d84575d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+      gallery: [
+        "https://images.unsplash.com/photo-1566669437685-b4247d84575d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+        "https://images.unsplash.com/photo-1516496636080-14fb876e029d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+        "https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80"
+      ],
       isAvailable: true,
     },
     {
@@ -242,7 +271,12 @@ async function seedDatabase() {
       roomType: "Standard Double",
       pricePerNight: "199.99",
       capacity: 2,
-      thumbnail: "https://example.com/rooms/standard-double.jpg",
+      thumbnail: "https://images.unsplash.com/photo-1595526114035-0d45a16a0f79?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+      gallery: [
+        "https://images.unsplash.com/photo-1595526114035-0d45a16a0f79?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+        "https://images.unsplash.com/photo-1564501049412-61c2a3083791?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+        "https://images.unsplash.com/photo-1516496636080-14fb876e029d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80"
+      ],
       isAvailable: true,
     },
     // Beachside Resort rooms
@@ -251,7 +285,12 @@ async function seedDatabase() {
       roomType: "Ocean View",
       pricePerNight: "349.99",
       capacity: 2,
-      thumbnail: "https://example.com/rooms/ocean-view.jpg",
+      thumbnail: "https://images.unsplash.com/photo-1444201983204-c43cbd584d93?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+      gallery: [
+        "https://images.unsplash.com/photo-1444201983204-c43cbd584d93?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+        "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+        "https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80"
+      ],
       isAvailable: true,
     },
     {
@@ -259,7 +298,12 @@ async function seedDatabase() {
       roomType: "Penthouse",
       pricePerNight: "799.99",
       capacity: 6,
-      thumbnail: "https://example.com/rooms/penthouse.jpg",
+      thumbnail: "https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+      gallery: [
+        "https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+        "https://images.unsplash.com/photo-1564501049412-61c2a3083791?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+        "https://images.unsplash.com/photo-1516496636080-14fb876e029d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80"
+      ],
       isAvailable: true,
     },
     // Mountain View Lodge rooms
@@ -268,7 +312,12 @@ async function seedDatabase() {
       roomType: "Cabin Suite",
       pricePerNight: "249.99",
       capacity: 4,
-      thumbnail: "https://example.com/rooms/cabin-suite.jpg",
+      thumbnail: "https://images.unsplash.com/photo-1582582621959-48d27397dc69?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+      gallery: [
+        "https://images.unsplash.com/photo-1582582621959-48d27397dc69?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+        "https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+        "https://images.unsplash.com/photo-1564501049412-61c2a3083791?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80"
+      ],
       isAvailable: true,
     },
     {
@@ -276,7 +325,12 @@ async function seedDatabase() {
       roomType: "Standard Room",
       pricePerNight: "149.99",
       capacity: 2,
-      thumbnail: "https://example.com/rooms/standard-room.jpg",
+      thumbnail: "https://images.unsplash.com/photo-1566669437685-b4247d84575d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+      gallery: [
+        "https://images.unsplash.com/photo-1566669437685-b4247d84575d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+        "https://images.unsplash.com/photo-1516496636080-14fb876e029d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80",
+        "https://images.unsplash.com/photo-1564501049412-61c2a3083791?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600&q=80"
+      ],
       isAvailable: true,
     },
   ];

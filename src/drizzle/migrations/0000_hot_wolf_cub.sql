@@ -38,6 +38,14 @@ CREATE TABLE "bookings" (
 	"updatedAt" timestamp DEFAULT now()
 );
 --> statement-breakpoint
+CREATE TABLE "cities" (
+	"cityId" serial PRIMARY KEY NOT NULL,
+	"cityName" varchar(100) NOT NULL,
+	"cityPicture" varchar(255),
+	"countryName" varchar(100) NOT NULL,
+	"createdAt" timestamp DEFAULT now()
+);
+--> statement-breakpoint
 CREATE TABLE "customerSupportTickets" (
 	"ticketId" serial PRIMARY KEY NOT NULL,
 	"userId" integer,
@@ -61,6 +69,8 @@ CREATE TABLE "hotels" (
 	"hotelId" serial PRIMARY KEY NOT NULL,
 	"name" varchar(255) NOT NULL,
 	"location" varchar(255),
+	"thumbnail" varchar,
+	"gallery" varchar(255)[],
 	"contactPhone" varchar(20),
 	"category" varchar(100),
 	"rating" numeric(2, 1),
@@ -86,6 +96,8 @@ CREATE TABLE "rooms" (
 	"roomType" varchar(100) NOT NULL,
 	"pricePerNight" numeric(10, 2) NOT NULL,
 	"capacity" integer NOT NULL,
+	"thumbnail" varchar,
+	"gallery" varchar(255)[],
 	"isAvailable" boolean DEFAULT true,
 	"createdAt" timestamp DEFAULT now()
 );
@@ -95,6 +107,8 @@ CREATE TABLE "users" (
 	"firstName" varchar(100) NOT NULL,
 	"lastName" varchar(100) NOT NULL,
 	"email" varchar(255) NOT NULL,
+	"profileImage" varchar,
+	"bio" varchar,
 	"password" varchar(255) NOT NULL,
 	"contactPhone" varchar(20),
 	"role" "userRole" DEFAULT 'user',
@@ -103,9 +117,19 @@ CREATE TABLE "users" (
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
+CREATE TABLE "wishlist" (
+	"wishlistId" serial PRIMARY KEY NOT NULL,
+	"userId" integer,
+	"roomId" integer,
+	"createdAt" timestamp DEFAULT now(),
+	"updatedAt" timestamp DEFAULT now()
+);
+--> statement-breakpoint
 ALTER TABLE "bookings" ADD CONSTRAINT "bookings_userId_users_userId_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("userId") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "bookings" ADD CONSTRAINT "bookings_roomId_rooms_roomId_fk" FOREIGN KEY ("roomId") REFERENCES "public"."rooms"("roomId") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "customerSupportTickets" ADD CONSTRAINT "customerSupportTickets_userId_users_userId_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("userId") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "entityAmenities" ADD CONSTRAINT "entityAmenities_amenityId_amenities_amenityId_fk" FOREIGN KEY ("amenityId") REFERENCES "public"."amenities"("amenityId") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "payments" ADD CONSTRAINT "payments_bookingId_bookings_bookingId_fk" FOREIGN KEY ("bookingId") REFERENCES "public"."bookings"("bookingId") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "rooms" ADD CONSTRAINT "rooms_hotelId_hotels_hotelId_fk" FOREIGN KEY ("hotelId") REFERENCES "public"."hotels"("hotelId") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "rooms" ADD CONSTRAINT "rooms_hotelId_hotels_hotelId_fk" FOREIGN KEY ("hotelId") REFERENCES "public"."hotels"("hotelId") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "wishlist" ADD CONSTRAINT "wishlist_userId_users_userId_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("userId") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "wishlist" ADD CONSTRAINT "wishlist_roomId_rooms_roomId_fk" FOREIGN KEY ("roomId") REFERENCES "public"."rooms"("roomId") ON DELETE cascade ON UPDATE no action;

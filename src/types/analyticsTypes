@@ -1,0 +1,29 @@
+export type DashboardStats = {
+  totalUsers: number;
+  totalBookings: number;
+  totalHotels: number;
+  totalRevenue: string;
+};
+
+export type MonthlyBookingData = {
+  month: string;
+  bookings: number;
+}[];
+
+export type RoomOccupancyData = {
+  name: string;
+  value: number;
+}[];
+
+export type RecentBooking = {
+  id: number;
+  guest: string;
+  room: string;
+  date: string;
+};
+
+export type NewUser = {
+  name: string;
+  email: string;
+  joined: string;
+};

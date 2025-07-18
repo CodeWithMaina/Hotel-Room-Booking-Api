@@ -1,7 +1,18 @@
+import { Request, Response } from "express";
 import db from "../drizzle/db";
-import { and, eq, inArray } from "drizzle-orm";
+import {
+  and,
+  eq,
+  gte,
+  inArray,
+  lte,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm";
 import {
   amenities,
+  bookings,
   entityAmenities,
   rooms,
   THotelSelect,
@@ -72,21 +83,22 @@ export const getRoomWithAmenitiesService = async (
 
   const roomEntityAmenities = await getAmenitiesForOneEntity(roomId, "room");
 
-  // Get all amenity details
   const amenityIds = roomEntityAmenities
     .map((ea) => ea.amenityId)
     .filter((id): id is number => id !== null);
+
   let roomAmenities: TRoomAmenity[] = [];
 
   if (amenityIds.length > 0) {
     const amenitiesResult = await db.query.amenities.findMany({
       where: inArray(amenities.amenityId, amenityIds),
     });
+
     roomAmenities = amenitiesResult
       .filter((a) => a.createdAt !== null)
       .map((a) => ({
         ...a,
-        createdAt: a.createdAt as Date,
+        createdAt: new Date(a.createdAt!), // ensure correct type
       }));
   }
 
@@ -94,4 +106,86 @@ export const getRoomWithAmenitiesService = async (
     room,
     amenities: roomAmenities,
   };
+};
+
+export const getAvailableRoomsOnDatesService = async (
+  checkInDate: string,
+  checkOutDate: string
+): Promise<TRoomSelect[]> => {
+  const allRooms = await db.select().from(rooms);
+
+  const bookedRoomIdsResult = await db
+    .selectDistinct({ roomId: bookings.roomId })
+    .from(bookings)
+    .where(
+      and(
+        ne(bookings.bookingStatus, "Cancelled"),
+        or(
+          and(
+            lte(bookings.checkInDate, checkOutDate),
+            gte(bookings.checkOutDate, checkInDate)
+          )
+        )
+      )
+    );
+
+  const bookedRoomIds = bookedRoomIdsResult.map((b) => b.roomId);
+
+  const availableRooms = allRooms.filter(
+    (room) => !bookedRoomIds.includes(room.roomId)
+  );
+
+  return availableRooms;
+};
+
+const toDateString = (date: Date) => date.toISOString().split("T")[0];
+
+
+export const updateRoomAvailability = async (roomId: number) => {
+  const today = new Date();
+
+  const futureBookings = await db.query.bookings.findMany({
+    where: and(
+      eq(bookings.roomId, roomId),
+      ne(bookings.bookingStatus, "Cancelled"),
+      gte(bookings.checkOutDate, toDateString(new Date()))
+    ),
+  });
+
+  const isFullyBooked = futureBookings.length > 0;
+
+  await db
+    .update(rooms)
+    .set({ isAvailable: !isFullyBooked })
+    .where(eq(rooms.roomId, roomId));
+};
+
+// Controller
+export const getAvailableRoomsController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { checkInDate, checkOutDate } = req.query as {
+      checkInDate: string;
+      checkOutDate: string;
+    };
+
+    if (!checkInDate || !checkOutDate) {
+      return res
+        .status(400)
+        .json({ message: "Missing check-in or check-out date" });
+    }
+
+    const rooms = await getAvailableRoomsOnDatesService(
+      checkInDate,
+      checkOutDate
+    );
+    res.status(200).json({ success: true, data: rooms });
+  } catch (error: any) {
+    res.status(500).json({
+      message: "Failed to fetch available rooms",
+      error: error.message,
+    });
+  }
 };

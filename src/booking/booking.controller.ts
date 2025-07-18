@@ -6,20 +6,41 @@ import {
   updateBookingService,
   deleteBookingService,
   getBookingsByUserIdService,
+  getBookingsByStatusService,
 } from "./booking.service";
 import { TBookingInsert } from "../drizzle/schema";
 import { TBookingInsertForm } from "../types/bookingTypes";
+import { TBookingStatus } from "../types/types";
+
 
 export const getBookingsController = async (req: Request, res: Response) => {
   try {
-    const bookings = await getBookingsService();
-    if (bookings == null) {
-      res.status(404).json({ message: "No bookings found" });
+    // Get pagination parameters from query string with defaults
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    
+    if (page < 1 || limit < 1) {
+      res.status(400).json({ 
+        success: false,
+        message: "Page and limit must be positive numbers" 
+      });
       return;
     }
-    res.status(200).json(bookings);
+    
+    const result = await getBookingsService({ page, limit });
+    
+    if (result.data.length === 0) {
+      res.status(404).json({ 
+        success: false,
+        message: "No bookings found" 
+      });
+      return;
+    }
+    
+    res.status(200).json(result);
   } catch (error: any) {
     res.status(500).json({
+      success: false,
       message: "Failed to fetch bookings",
       error: error.message,
     });
@@ -52,6 +73,7 @@ export const createBookingController = async (req: Request, res: Response) => {
   try {
     let bookingData: TBookingInsertForm = req.body;
 
+    // Basic required fields check
     if (
       !bookingData.userId ||
       !bookingData.roomId ||
@@ -59,26 +81,45 @@ export const createBookingController = async (req: Request, res: Response) => {
       !bookingData.checkOutDate ||
       !bookingData.totalAmount
     ) {
-      res.status(400).json({ message: "Missing required fields" });
-      return;
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
+    // Ensure consistent decimal format for total
     bookingData = {
       ...bookingData,
       totalAmount: parseFloat(bookingData.totalAmount).toFixed(2),
     };
 
     const newBooking = await createBookingService(bookingData);
-    res.status(201).json(newBooking);
-    return;
+    return res.status(201).json(newBooking);
   } catch (error: any) {
+    const errorMessage = error.message || "An unexpected error occurred";
+
+    // Handle expected user input or business logic errors
+    if (
+      errorMessage.includes("Room not found") ||
+      errorMessage.includes("is not available") ||
+      errorMessage.includes("Invalid") ||
+      errorMessage.includes("Check-out must be after check-in") ||
+      errorMessage.includes("already booked")
+    ) {
+      const statusCode = errorMessage.includes("already booked") ? 409 : 400;
+
+      return res.status(statusCode).json({
+        message: "Booking validation failed",
+        error: errorMessage,
+      });
+    }
+
+    // For unexpected system/database errors
     console.error("Booking creation error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       message: "Failed to create booking",
-      error: error.message || error,
+      error: errorMessage,
     });
   }
 };
+
 
 export const updateBookingController = async (req: Request, res: Response) => {
   try {
@@ -136,6 +177,8 @@ export const getBookingsByUserIdController = async (
 ) => {
   try {
     const userId = parseInt(req.params.userId);
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
 
     if (isNaN(userId)) {
       res.status(400).json({
@@ -144,10 +187,18 @@ export const getBookingsByUserIdController = async (
       });
       return;
     }
+    
+    if (page < 1 || limit < 1) {
+      res.status(400).json({ 
+        success: false,
+        message: "Page and limit must be positive numbers" 
+      });
+      return;
+    }
 
-    const bookings = await getBookingsByUserIdService(userId);
+    const result = await getBookingsByUserIdService(userId, { page, limit });
 
-    if (!bookings || bookings.length === 0) {
+    if (result.data.length === 0) {
       res.status(404).json({
         success: false,
         message: "No bookings found for this user",
@@ -155,7 +206,7 @@ export const getBookingsByUserIdController = async (
       return;
     }
 
-    res.status(200).json(bookings);
+    res.status(200).json(result);
     return;
   } catch (error: any) {
     console.error("Error fetching bookings by user ID:", error);
@@ -166,5 +217,55 @@ export const getBookingsByUserIdController = async (
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
     return;
+  }
+};
+
+export const getBookingsByStatusController = async (req: Request, res: Response) => {
+  try {
+    // Get pagination parameters
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    // Get status filter (can be single string or array)
+    let status: TBookingStatus[] = [];
+    if (req.query.status) {
+      const statusParam = req.query.status;
+      status = Array.isArray(statusParam) 
+        ? statusParam.map(s => s.toString() as TBookingStatus)
+        : [statusParam.toString() as TBookingStatus];
+    } else {
+      // Default to all statuses if none provided
+      status = ['Pending', 'Confirmed', 'Cancelled'];
+    }
+
+    if (page < 1 || limit < 1) {
+      res.status(400).json({ 
+        success: false,
+        message: "Page and limit must be positive numbers" 
+      });
+      return;
+    }
+
+    const result = await getBookingsByStatusService({ 
+      page, 
+      limit, 
+      status 
+    });
+
+    if (result.data.length === 0) {
+      res.status(404).json({ 
+        success: false,
+        message: "No bookings found with the specified status" 
+      });
+      return;
+    }
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch bookings by status",
+      error: error.message,
+    });
   }
 };

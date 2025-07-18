@@ -7,6 +7,7 @@ import {
   deleteRoomService,
   getRoomByHotelIdService,
   getRoomWithAmenitiesService,
+  getAvailableRoomsOnDatesService,
 } from "./room.service";
 import { TRoomInsert, TRoomSelect } from "../drizzle/schema";
 
@@ -157,6 +158,29 @@ export const getRoomWithAmenitiesController = async (req: Request, res: Response
   } catch (error: any) {
     res.status(500).json({
       message: "Failed to fetch room details",
+      error: error.message,
+    });
+  }
+};
+
+
+// Controller
+export const getAvailableRoomsController = async (req: Request, res: Response) => {
+  try {
+    const { checkInDate, checkOutDate } = req.query as {
+      checkInDate: string;
+      checkOutDate: string;
+    };
+
+    if (!checkInDate || !checkOutDate) {
+      return res.status(400).json({ message: "Missing check-in or check-out date" });
+    }
+
+    const rooms = await getAvailableRoomsOnDatesService(checkInDate, checkOutDate);
+    res.status(200).json({ success: true, data: rooms });
+  } catch (error: any) {
+    res.status(500).json({
+      message: "Failed to fetch available rooms",
       error: error.message,
     });
   }

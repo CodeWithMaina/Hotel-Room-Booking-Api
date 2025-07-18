@@ -6,6 +6,7 @@ import { TUserInsert, TUserSelect } from "../drizzle/schema";
 interface TReturnUser {
   firstName: string;
   lastName: string;
+  bio: string | null;
   email: string;
   profileImage: string | null;
   contactPhone: string | null;
@@ -23,6 +24,7 @@ export const getUserByIdService = async (
     columns: {
       firstName: true,
       lastName: true,
+      bio: true,
       email: true,
       profileImage: true,
       contactPhone: true,

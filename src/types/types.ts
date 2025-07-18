@@ -1,3 +1,5 @@
+import { TBookingSelect } from "../drizzle/schema";
+
 export type TUser = {
   userId: number;
   firstName: string;
@@ -13,12 +15,13 @@ export type TRoom = {
   roomType: string;
   hotelId: number;
   pricePerNight: string;
+  thumbnail: string;
   capacity: number;
   amenities: string[];
   isAvailable: boolean;
 };
 
-export type TBookingStatus = "Confirmed" | "Cancelled" | string; // Add other possible statuses if known
+export type TBookingStatus = "Confirmed" | "Cancelled" | "Pending"; 
 
 export type TBooking = {
   bookingId: number;
@@ -31,9 +34,7 @@ export type TBooking = {
   room: TRoom;
 };
 
-export type TBookingsResponse = {
-  Bookings: TBooking[];
-};
+export type TBookingsResponse = TBookingSelect[]
 
 export type TBookingFindParams = {
   columns: {
@@ -62,6 +63,7 @@ export type TBookingFindParams = {
         roomType: boolean;
         hotelId: boolean;
         pricePerNight: boolean;
+        thumbnail: boolean;
         capacity: boolean;
         amenities: boolean;
         isAvailable: boolean;

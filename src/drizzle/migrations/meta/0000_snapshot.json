@@ -1,5 +1,5 @@
 {
-  "id": "e93cff63-09ba-46a3-8403-beef53d05d44",
+  "id": "1467df24-1da0-4896-8786-00f218a3296f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -221,6 +221,50 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.cities": {
+      "name": "cities",
+      "schema": "",
+      "columns": {
+        "cityId": {
+          "name": "cityId",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "cityName": {
+          "name": "cityName",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cityPicture": {
+          "name": "cityPicture",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "countryName": {
+          "name": "countryName",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.customerSupportTickets": {
       "name": "customerSupportTickets",
       "schema": "",
@@ -378,6 +422,18 @@
         "location": {
           "name": "location",
           "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "thumbnail": {
+          "name": "thumbnail",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gallery": {
+          "name": "gallery",
+          "type": "varchar(255)[]",
           "primaryKey": false,
           "notNull": false
         },
@@ -541,6 +597,18 @@
           "primaryKey": false,
           "notNull": true
         },
+        "thumbnail": {
+          "name": "thumbnail",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gallery": {
+          "name": "gallery",
+          "type": "varchar(255)[]",
+          "primaryKey": false,
+          "notNull": false
+        },
         "isAvailable": {
           "name": "isAvailable",
           "type": "boolean",
@@ -606,6 +674,18 @@
           "primaryKey": false,
           "notNull": true
         },
+        "profileImage": {
+          "name": "profileImage",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bio": {
+          "name": "bio",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "password": {
           "name": "password",
           "type": "varchar(255)",
@@ -653,6 +733,78 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.wishlist": {
+      "name": "wishlist",
+      "schema": "",
+      "columns": {
+        "wishlistId": {
+          "name": "wishlistId",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "roomId": {
+          "name": "roomId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "wishlist_userId_users_userId_fk": {
+          "name": "wishlist_userId_users_userId_fk",
+          "tableFrom": "wishlist",
+          "tableTo": "users",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "userId"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "wishlist_roomId_rooms_roomId_fk": {
+          "name": "wishlist_roomId_rooms_roomId_fk",
+          "tableFrom": "wishlist",
+          "tableTo": "rooms",
+          "columnsFrom": [
+            "roomId"
+          ],
+          "columnsTo": [
+            "roomId"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

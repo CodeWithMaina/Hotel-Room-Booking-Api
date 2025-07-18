@@ -2,9 +2,31 @@ import { and, eq, inArray } from "drizzle-orm";
 import db from "../drizzle/db";
 import { addresses, amenities, entityAmenities, hotels, TAddressSelect, TAmenitySelect, TEntityAmenitySelect, THotelInsert, THotelSelect } from "../drizzle/schema";
 
+
+type Hotel = {
+    hotelId: number;
+    name: string;
+    location: string | null;
+    thumbnail: string | null;
+    contactPhone: string | null;
+    category: string | null;
+    rating: string | null;
+};
+
+
 //Getting all hotels
-export const getHotelsService = async ():Promise<THotelSelect[] | null> => {
-    return await db.query.hotels.findMany({});
+export const getHotelsService = async ():Promise<Hotel[] | null> => {
+    return await db.query.hotels.findMany({
+      columns: {
+        hotelId: true,
+        name: true,
+        location: true,
+        thumbnail: true,
+        contactPhone:true,
+        category:  true,
+        rating: true
+      }
+    });
 };
 // Get hotel by ID
 export const getHotelByIdService = async(hotelId: number):Promise<THotelSelect | null> => {

@@ -1,39 +1,36 @@
 import express, { Response } from "express";
 import dotenv from "dotenv";
-import { userRouter } from "./user/user.route";
 import cors from "cors";
+import { userRouter } from "./user/user.route";
 import { bookingRouter } from "./booking/booking.route";
 import { hotelRouter } from "./hotel/hotel.route";
 import { roomRouter } from "./room/room.route";
 import { ticketRouter } from "./supportTicket/ticket.route";
 import { paymentRouter } from "./payment/payment.route";
 import { logger } from "./middleware/logger";
-import { rateLimiterMiddleware } from "./middleware/rateLimiter";
 import { authRouter } from "./auth/auth.route";
 import { amenityRouter } from "./amenities/amenities.route";
 import { addressRouter } from "./addresses/addresses.route";
 import { entityAmenityRouter } from "./entityAmenities/enityAmenities.routes";
+import { analyticsRouter } from "./analytics/analytics.route";
+import { wishlistRouter } from "./wishlist/wishlist.route";
+import { stripeRouter } from "./stripe/stripe.routes"; // Important: must come before body parsers
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Basic Middleware
+// Use Stripe routes BEFORE global body parser!
+app.use("/api", stripeRouter);
+
+// Global middlewares (after Stripe raw body handling)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(logger);
-app.use(rateLimiterMiddleware);
+// app.use(rateLimiterMiddleware);
 
-//default route
-app.get("/", (req, res: Response) => {
-  res.send("Welcome to Hotel Room Booking Backend");
-});
-
-// Enable CORS for all routes
-app.use(cors());
-
-// Or configure specific origins
+// CORS
 app.use(
   cors({
     origin: ["http://localhost:5173"],
@@ -43,7 +40,12 @@ app.use(
   })
 );
 
-//import route
+// Default route
+app.get("/", (req, res: Response) => {
+  res.send("Welcome to Hotel Room Booking Backend");
+});
+
+// Other routes
 app.use("/api", authRouter);
 app.use("/api", userRouter);
 app.use("/api", bookingRouter);
@@ -52,6 +54,8 @@ app.use("/api", roomRouter);
 app.use("/api", ticketRouter);
 app.use("/api", paymentRouter);
 app.use("/api", amenityRouter);
+app.use("/api", wishlistRouter);
+app.use("/api", analyticsRouter);
 app.use("/api", addressRouter);
 app.use("/api", entityAmenityRouter);
 

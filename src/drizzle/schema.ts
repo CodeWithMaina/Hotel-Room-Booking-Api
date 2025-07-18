@@ -1,21 +1,19 @@
-import { 
-  pgTable, 
-  serial, 
-  varchar, 
-  text, 
-  timestamp, 
-  boolean, 
-  integer, 
-  numeric, 
-  date, 
+import {
+  pgTable,
+  serial,
+  varchar,
+  text,
+  timestamp,
+  boolean,
+  integer,
+  numeric,
+  date,
   pgEnum,
-  primaryKey,
-  foreignKey
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // ====================== ENUMS ======================
-export const userRoleEnum = pgEnum('userRole', ['user','owner', 'admin']);
+export const userRoleEnum = pgEnum('userRole', ['user', 'owner', 'admin']);
 export const bookingStatusEnum = pgEnum('bookingStatus', ['Pending', 'Confirmed', 'Cancelled']);
 export const paymentStatusEnum = pgEnum('paymentStatus', ['Pending', 'Completed', 'Failed']);
 export const paymentMethodEnum = pgEnum('paymentMethod', ['card', 'mpesa']);
@@ -29,7 +27,8 @@ export const users = pgTable('users', {
   firstName: varchar('firstName', { length: 100 }).notNull(),
   lastName: varchar('lastName', { length: 100 }).notNull(),
   email: varchar('email', { length: 255 }).notNull().unique(),
-  profileImage:varchar('profileImage'),
+  profileImage: varchar('profileImage'),
+  bio: varchar('bio'),
   password: varchar('password', { length: 255 }).notNull(),
   contactPhone: varchar('contactPhone', { length: 20 }),
   role: userRoleEnum('role').default('user'),
@@ -41,7 +40,8 @@ export const hotels = pgTable('hotels', {
   hotelId: serial('hotelId').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   location: varchar('location', { length: 255 }),
-  thumbnail:varchar('thumbnail'),
+  thumbnail: varchar('thumbnail'),
+  gallery: varchar('gallery', { length: 255 }).array(), // <-- gallery added
   contactPhone: varchar('contactPhone', { length: 20 }),
   category: varchar('category', { length: 100 }),
   rating: numeric('rating', { precision: 2, scale: 1 }),
@@ -49,10 +49,22 @@ export const hotels = pgTable('hotels', {
   updatedAt: timestamp('updatedAt').defaultNow(),
 });
 
+export const rooms = pgTable('rooms', {
+  roomId: serial('roomId').primaryKey(),
+  hotelId: integer('hotelId').references(() => hotels.hotelId, { onDelete: 'cascade' }),
+  roomType: varchar('roomType', { length: 100 }).notNull(),
+  pricePerNight: numeric('pricePerNight', { precision: 10, scale: 2 }).notNull(),
+  capacity: integer('capacity').notNull(),
+  thumbnail: varchar('thumbnail'),
+  gallery: varchar('gallery', { length: 255 }).array(), // <-- gallery added
+  isAvailable: boolean('isAvailable').default(true),
+  createdAt: timestamp('createdAt').defaultNow(),
+});
+
 export const addresses = pgTable('addresses', {
   addressId: serial('addressId').primaryKey(),
-  entityId: integer('entityId').notNull(), // Can be userId or hotelId
-  entityType: addressEntityTypeEnum('entityType').notNull(), // 'user' or 'hotel'
+  entityId: integer('entityId').notNull(),
+  entityType: addressEntityTypeEnum('entityType').notNull(),
   street: varchar('street', { length: 255 }).notNull(),
   city: varchar('city', { length: 100 }).notNull(),
   state: varchar('state', { length: 100 }),
@@ -66,26 +78,15 @@ export const amenities = pgTable('amenities', {
   amenityId: serial('amenityId').primaryKey(),
   name: varchar('name', { length: 100 }).notNull(),
   description: text('description'),
-  icon: varchar('icon', { length: 50 }), // Optional icon name for UI
+  icon: varchar('icon', { length: 50 }),
   createdAt: timestamp('createdAt').defaultNow(),
 });
 
 export const entityAmenities = pgTable('entityAmenities', {
   id: serial('id').primaryKey(),
   amenityId: integer('amenityId').references(() => amenities.amenityId, { onDelete: 'cascade' }),
-  entityId: integer('entityId').notNull(), // Can be roomId or hotelId
-  entityType: amenityEntityTypeEnum('entityType').notNull(), // 'room' or 'hotel'
-  createdAt: timestamp('createdAt').defaultNow(),
-});
-
-export const rooms = pgTable('rooms', {
-  roomId: serial('roomId').primaryKey(),
-  hotelId: integer('hotelId').references(() => hotels.hotelId, { onDelete: 'cascade' }),
-  roomType: varchar('roomType', { length: 100 }).notNull(),
-  pricePerNight: numeric('pricePerNight', { precision: 10, scale: 2 }).notNull(),
-  capacity: integer('capacity').notNull(),
-  thumbnail:varchar('thumbnail'),
-  isAvailable: boolean('isAvailable').default(true),
+  entityId: integer('entityId').notNull(),
+  entityType: amenityEntityTypeEnum('entityType').notNull(),
   createdAt: timestamp('createdAt').defaultNow(),
 });
 
@@ -97,6 +98,14 @@ export const bookings = pgTable('bookings', {
   checkOutDate: date('checkOutDate').notNull(),
   totalAmount: numeric('totalAmount', { precision: 10, scale: 2 }).notNull(),
   bookingStatus: bookingStatusEnum('bookingStatus').notNull(),
+  createdAt: timestamp('createdAt').defaultNow(),
+  updatedAt: timestamp('updatedAt').defaultNow(),
+});
+
+export const wishlist = pgTable('wishlist', {
+  wishlistId: serial('wishlistId').primaryKey(),
+  userId: integer('userId').references(() => users.userId, { onDelete: 'cascade' }),
+  roomId: integer('roomId').references(() => rooms.roomId, { onDelete: 'cascade' }),
   createdAt: timestamp('createdAt').defaultNow(),
   updatedAt: timestamp('updatedAt').defaultNow(),
 });
@@ -124,23 +133,26 @@ export const customerSupportTickets = pgTable('customerSupportTickets', {
   updatedAt: timestamp('updatedAt').defaultNow(),
 });
 
+export const cities = pgTable('cities', {
+  cityId: serial('cityId').primaryKey(),
+  cityName: varchar('cityName', { length: 100 }).notNull(),
+  cityPicture: varchar('cityPicture', { length: 255 }),
+  countryName: varchar('countryName', { length: 100 }).notNull(),
+  createdAt: timestamp('createdAt').defaultNow(),
+});
+
 // ====================== RELATIONS ======================
 export const usersRelations = relations(users, ({ many }) => ({
   bookings: many(bookings),
   tickets: many(customerSupportTickets),
-  addresses: many(addresses, {
-    relationName: 'userAddresses',
-  }),
+  addresses: many(addresses, { relationName: 'userAddresses' }),
+  wishlist: many(wishlist),
 }));
 
 export const hotelsRelations = relations(hotels, ({ many }) => ({
   rooms: many(rooms),
-  addresses: many(addresses, {
-    relationName: 'hotelAddresses',
-  }),
-  amenities: many(entityAmenities, {
-    relationName: 'hotelAmenities',
-  }),
+  addresses: many(addresses, { relationName: 'hotelAddresses' }),
+  amenities: many(entityAmenities, { relationName: 'hotelAmenities' }),
 }));
 
 export const roomsRelations = relations(rooms, ({ one, many }) => ({
@@ -149,9 +161,8 @@ export const roomsRelations = relations(rooms, ({ one, many }) => ({
     references: [hotels.hotelId],
   }),
   bookings: many(bookings),
-  amenities: many(entityAmenities, {
-    relationName: 'roomAmenities',
-  }),
+  amenities: many(entityAmenities, { relationName: 'roomAmenities' }),
+  wishlist: many(wishlist),
 }));
 
 export const addressesRelations = relations(addresses, ({ one }) => ({
@@ -214,6 +225,19 @@ export const customerSupportTicketsRelations = relations(customerSupportTickets,
   }),
 }));
 
+export const wishlistRelations = relations(wishlist, ({ one }) => ({
+  user: one(users, {
+    fields: [wishlist.userId],
+    references: [users.userId],
+  }),
+  room: one(rooms, {
+    fields: [wishlist.roomId],
+    references: [rooms.roomId],
+  }),
+}));
+
+export const citiesRelations = relations(cities, () => ({}));
+
 // ====================== TYPE INFERENCE ======================
 export type TUserSelect = typeof users.$inferSelect;
 export type TUserInsert = typeof users.$inferInsert;
@@ -241,3 +265,9 @@ export type TAmenityInsert = typeof amenities.$inferInsert;
 
 export type TEntityAmenitySelect = typeof entityAmenities.$inferSelect;
 export type TEntityAmenityInsert = typeof entityAmenities.$inferInsert;
+
+export type TWishlistSelect = typeof wishlist.$inferSelect;
+export type TWishlistInsert = typeof wishlist.$inferInsert;
+
+export type TCitySelect = typeof cities.$inferSelect;
+export type TCityInsert = typeof cities.$inferInsert;
