@@ -1,140 +1,101 @@
 import { Request, Response } from "express";
 import Stripe from "stripe";
-import { stripe } from "./stripe";
-import { updatePaymentByTransactionIdService } from "../payment/payment.service";
+import { stripe } from "./stripe"; // your Stripe instance
+import dotenv from "dotenv";
 import db from "../drizzle/db";
-import { bookings, payments, TPaymentInsert } from "../drizzle/schema";
+import { bookings } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
+import { sendNotificationEmail } from "../middleware/googleMailer";
 
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+dotenv.config();
 
 export const webhookHandler = async (req: Request, res: Response) => {
+  console.log("🔥 Stripe webhook received");
+
   const sig = req.headers["stripe-signature"] as string;
 
-  if (!sig || !endpointSecret) {
-     res.status(400).json({ error: "Missing signature or endpoint secret" });
-     return;
-  }
-
   let event: Stripe.Event;
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-  } catch (err: any) {
-    console.error("⚠️ Invalid webhook signature:", err.message);
-     res.status(400).json({ error: "Invalid signature" });
-     return;
 
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+    console.log("✅ Webhook verified:", event.type);
+  } catch (err) {
+    console.error("❌ Stripe webhook signature verification failed:", err);
+     res.status(400).send(`Webhook Error: ${(err as Error).message}`);
+     return;
   }
 
-  try {
-    switch (event.type) {
-      case "checkout.session.completed":
-        await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
-        break;
+  // Handle the event types you expect
+  switch (event.type) {
+    case "checkout.session.completed": {
+      const session = event.data.object as Stripe.Checkout.Session;
 
-      case "checkout.session.async_payment_succeeded":
-        await handleAsyncPaymentSucceeded(event.data.object as Stripe.Checkout.Session);
-        break;
+      console.log("✅ Checkout session completed:", session.id);
 
-      case "checkout.session.async_payment_failed":
-        await handleAsyncPaymentFailed(event.data.object as Stripe.Checkout.Session);
-        break;
+      const bookingId = session.metadata?.bookingId;
+      const userEmail = session.customer_details?.email;
 
-      default:
-        console.log(`ℹ️ Unhandled event type: ${event.type}`);
+      if (!bookingId) {
+        console.error("⚠️ Missing bookingId in session metadata");
+         res.status(400).send("Missing bookingId");
+         return;
+      }
+
+      try {
+        const updatedBooking = await db
+          .update(bookings)
+          .set({ bookingStatus: "Confirmed" })
+          .where(eq(bookings.bookingId, parseInt(bookingId)))
+          .returning();
+
+        console.log("✅ Booking updated:", updatedBooking);
+
+        // if (userEmail) {
+        //   await sendNotificationEmail({
+        //     to: userEmail,
+        //     subject: "Booking Confirmed",
+        //     html: `<p>Your payment was successful and your booking #${bookingId} is confirmed!</p>`,
+        //   });
+
+        //   console.log("📧 Confirmation email sent to", userEmail);
+        // }
+
+        res.status(200).json({ received: true });
+      } catch (err) {
+        console.error("❌ Failed to update booking:", err);
+         res.status(500).send("Internal server error");
+         return;
+      }
+
+      break;
     }
 
-    res.status(200).json({ received: true });
-  } catch (err) {
-    console.error("❌ Webhook handler failure:", err);
-    res.status(500).json({ error: "Webhook processing error" });
+    case "payment_intent.payment_failed": {
+      const intent = event.data.object as Stripe.PaymentIntent;
+      // const userEmail = intent?.receipt_email || intent?.charges?.data?.[0]?.billing_details?.email;
+
+      console.log("⚠️ Payment failed:", intent.id);
+
+      // if (userEmail) {
+      //   await sendNotificationEmail({
+      //     to: userEmail,
+      //     subject: "Payment Failed",
+      //     html: `<p>Your payment failed. Please try again or use a different payment method.</p>`,
+      //   });
+
+      //   console.log("📧 Failure email sent to", userEmail);
+      // }
+
+      res.status(200).json({ received: true });
+      break;
+    }
+
+    default:
+      console.warn("🚫 Unhandled event type:", event.type);
+      res.status(200).send("Unhandled event type");
   }
 };
-
-// ------------------------
-// 🔁 Idempotent Processing
-// ------------------------
-
-async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
-  const bookingId = session.metadata?.bookingId;
-  const transactionId = session.payment_intent as string;
-  const amountTotal = session.amount_total;
-
-  if (!bookingId || !transactionId || !amountTotal) {
-    throw new Error("Missing bookingId, transactionId or amount");
-  }
-
-  const paymentStatus = getPaymentStatus(session.payment_status);
-  const amount = (amountTotal / 100).toFixed(2);
-
-  // Idempotency check
-  const existing = await db.query.payments.findFirst({
-    where: eq(payments.transactionId, transactionId),
-  });
-
-  if (existing) {
-    console.log(`ℹ️ Duplicate payment ignored: ${transactionId}`);
-    return;
-  }
-
-  const paymentData: TPaymentInsert = {
-    bookingId: parseInt(bookingId),
-    transactionId,
-    amount,
-    paymentStatus,
-    paymentMethod: "card",
-    paymentDate: paymentStatus === "Completed" ? new Date() : null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
-  await db.transaction(async (tx) => {
-    if (paymentStatus === "Completed") {
-      await tx.update(bookings)
-        .set({ bookingStatus: "Confirmed", updatedAt: new Date() })
-        .where(eq(bookings.bookingId, parseInt(bookingId)));
-    }
-
-    const [inserted] = await tx.insert(payments).values(paymentData).returning();
-
-    if (!inserted) {
-      throw new Error("Payment insert failed");
-    }
-
-    console.log(`✅ Payment recorded: ${inserted.paymentId}`);
-  });
-}
-
-async function handleAsyncPaymentSucceeded(session: Stripe.Checkout.Session) {
-  const transactionId = session.payment_intent as string;
-  if (!transactionId) return;
-
-  await updatePaymentByTransactionIdService(transactionId, {
-    paymentStatus: "Completed",
-    paymentDate: new Date(),
-    updatedAt: new Date(),
-  });
-
-  console.log(`✅ Payment succeeded: ${transactionId}`);
-}
-
-async function handleAsyncPaymentFailed(session: Stripe.Checkout.Session) {
-  const transactionId = session.payment_intent as string;
-  if (!transactionId) return;
-
-  await updatePaymentByTransactionIdService(transactionId, {
-    paymentStatus: "Failed",
-    updatedAt: new Date(),
-  });
-
-  console.log(`❌ Payment failed: ${transactionId}`);
-}
-
-function getPaymentStatus(status: string): "Pending" | "Completed" | "Failed" {
-  switch (status) {
-    case "paid": return "Completed";
-    case "unpaid":
-    case "failed": return "Failed";
-    default: return "Pending";
-  }
-}

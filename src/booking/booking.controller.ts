@@ -81,7 +81,8 @@ export const createBookingController = async (req: Request, res: Response) => {
       !bookingData.checkOutDate ||
       !bookingData.totalAmount
     ) {
-      return res.status(400).json({ message: "Missing required fields" });
+       res.status(400).json({ message: "Missing required fields" });
+       return;
     }
 
     // Ensure consistent decimal format for total
@@ -91,7 +92,8 @@ export const createBookingController = async (req: Request, res: Response) => {
     };
 
     const newBooking = await createBookingService(bookingData);
-    return res.status(201).json(newBooking);
+     res.status(201).json(newBooking);
+     return;
   } catch (error: any) {
     const errorMessage = error.message || "An unexpected error occurred";
 
@@ -105,18 +107,20 @@ export const createBookingController = async (req: Request, res: Response) => {
     ) {
       const statusCode = errorMessage.includes("already booked") ? 409 : 400;
 
-      return res.status(statusCode).json({
+       res.status(statusCode).json({
         message: "Booking validation failed",
         error: errorMessage,
       });
+      return;
     }
 
     // For unexpected system/database errors
     console.error("Booking creation error:", error);
-    return res.status(500).json({
+     res.status(500).json({
       message: "Failed to create booking",
       error: errorMessage,
     });
+    return
   }
 };
 

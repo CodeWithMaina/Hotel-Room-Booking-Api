@@ -117,3 +117,19 @@ export const updatePaymentByTransactionIdService = async (
     .returning();
   return results[0] || null;
 };
+
+
+export const getPaymentsByUserIdService = async (
+  userId: number
+): Promise<TPaymentSelect[]> => {
+  const results = await db
+    .select()
+    .from(payments)
+    .innerJoin(bookings, eq(payments.bookingId, bookings.bookingId))
+    .where(eq(bookings.userId, userId));
+
+  return results.map((row) => ({
+    ...row.payments,
+    booking: row.bookings,
+  }));
+};

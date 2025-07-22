@@ -5,6 +5,7 @@ import {
   createPaymentService,
   updatePaymentService,
   deletePaymentService,
+  getPaymentsByUserIdService,
 } from "./payment.service";
 import { TPaymentInsert } from "../drizzle/schema";
 
@@ -15,7 +16,11 @@ export const getPaymentsController = async (req: Request, res: Response) => {
       res.status(404).json({ message: "No payments found" });
       return;
     }
-    res.status(200).json({"Payments": payments});
+    res.status(200).json({
+      success: true,
+      message: "Payments retrieved successfully.",
+      data: payments,
+    });
   } catch (error: any) {
     res.status(500).json({
       message: "Failed to fetch payments",
@@ -49,7 +54,11 @@ export const getPaymentByIdController = async (req: Request, res: Response) => {
 export const createPaymentController = async (req: Request, res: Response) => {
   try {
     const paymentData: TPaymentInsert = req.body;
-    if (!paymentData.bookingId || !paymentData.amount || !paymentData.paymentStatus) {
+    if (
+      !paymentData.bookingId ||
+      !paymentData.amount ||
+      !paymentData.paymentStatus
+    ) {
       res.status(400).json({ message: "Missing required fields" });
       return;
     }
@@ -111,5 +120,50 @@ export const deletePaymentController = async (req: Request, res: Response) => {
       message: "Failed to delete payment",
       error: error.message,
     });
+  }
+};
+
+export const getPaymentsByUserIdController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { userId } = req.params;
+
+    // Validate userId
+    const parsedUserId = parseInt(userId, 10);
+    if (isNaN(parsedUserId) || parsedUserId <= 0) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid userId parameter. Must be a positive number.",
+      });
+      return;
+    }
+
+    const payments = await getPaymentsByUserIdService(parsedUserId);
+
+    // Handle no payments found
+    if (!payments || payments.length === 0) {
+      res.status(404).json({
+        success: false,
+        message: "No payments found for this user.",
+      });
+      return;
+    }
+
+    // Success
+    res.status(200).json({
+      success: true,
+      message: "Payments retrieved successfully.",
+      data: payments,
+    });
+    return;
+  } catch (error) {
+    console.error("Error in getPaymentsByUserIdController:", error);
+    res.status(500).json({
+      success: false,
+      message: "An internal server error occurred.",
+    });
+    return;
   }
 };

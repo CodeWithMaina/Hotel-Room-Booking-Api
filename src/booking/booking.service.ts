@@ -127,21 +127,21 @@ const toDateString = (date: Date) => date.toISOString().split("T")[0];
 export const createBookingService = async (
   data: TBookingInsertForm
 ): Promise<TBookingSelect> => {
-  // Validate input dates
-  if (!data.checkInDate || !data.checkOutDate) {
+  // 1. Validate and convert dates
+  if (!data.checkInDate || !data.checkOutDate)
     throw new Error("Missing check-in or check-out date");
-  }
 
-  // Convert and validate dates
   const checkInDate = new Date(data.checkInDate);
   const checkOutDate = new Date(data.checkOutDate);
 
-  if (isNaN(checkInDate.getTime())) throw new Error("Invalid check-in date");
-  if (isNaN(checkOutDate.getTime())) throw new Error("Invalid check-out date");
+  if (isNaN(checkInDate.getTime()))
+    throw new Error("Invalid check-in date");
+  if (isNaN(checkOutDate.getTime()))
+    throw new Error("Invalid check-out date");
   if (checkInDate >= checkOutDate)
     throw new Error("Check-out must be after check-in");
 
-  // Validate room exists and is available
+  // 2. Check room availability
   const room = await db.query.rooms.findFirst({
     where: eq(rooms.roomId, data.roomId),
   });
@@ -149,7 +149,7 @@ export const createBookingService = async (
   if (!room) throw new Error("Room not found");
   if (!room.isAvailable) throw new Error("Room is not available");
 
-  // Check for booking conflicts with overlapping dates
+  // 3. Check for conflicting bookings
   const conflicts = await db.query.bookings.findMany({
     where: and(
       eq(bookings.roomId, data.roomId),
@@ -167,20 +167,24 @@ export const createBookingService = async (
     throw new Error("Room is already booked for the selected dates");
   }
 
-  // Transaction for booking
-  return await db.transaction(async (tx) => {
-    const [booking] = await tx
-      .insert(bookings)
-      .values({
-        ...data,
-        checkInDate: format(checkInDate, "yyyy-MM-dd"),
-        checkOutDate: format(checkOutDate, "yyyy-MM-dd"),
-        bookingStatus: "Pending",
-      })
-      .returning();
+  // 4. Insert booking directly (no transaction)
+  const [booking] = await db
+    .insert(bookings)
+    .values({
+      ...data,
+      checkInDate: format(checkInDate, "yyyy-MM-dd"),
+      checkOutDate: format(checkOutDate, "yyyy-MM-dd"),
+      bookingStatus: "Pending",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .returning();
 
-    return booking;
-  });
+  if (!booking) {
+    throw new Error("Failed to create booking");
+  }
+
+  return booking;
 };
 
 export const updateBookingService = async (
@@ -329,16 +333,14 @@ export const updateBookingStatusService = async (
 export const confirmBookingService = async (
   bookingId: number
 ): Promise<TBookingSelect | null> => {
-  return await db.transaction(async (tx) => {
-    const result = await tx
-      .update(bookings)
-      .set({
-        bookingStatus: "Confirmed",
-        updatedAt: new Date(),
-      })
-      .where(eq(bookings.bookingId, bookingId))
-      .returning();
+  const [updated] = await db
+    .update(bookings)
+    .set({
+      bookingStatus: "Confirmed",
+      updatedAt: new Date(),
+    })
+    .where(eq(bookings.bookingId, bookingId))
+    .returning();
 
-    return result[0] || null;
-  });
+  return updated || null;
 };

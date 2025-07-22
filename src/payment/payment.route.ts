@@ -3,6 +3,7 @@ import {
   createPaymentController, 
   deletePaymentController, 
   getPaymentByIdController, 
+  getPaymentsByUserIdController, 
   getPaymentsController, 
   updatePaymentController 
 } from "./payment.controller";
@@ -14,3 +15,4 @@ paymentRouter.get("/payment/:id", getPaymentByIdController);
 paymentRouter.post("/payment", createPaymentController);
 paymentRouter.put("/payment/:id", updatePaymentController);
 paymentRouter.delete("/payment/:id", deletePaymentController);
+paymentRouter.get("/payment/user/:userId", getPaymentsByUserIdController);

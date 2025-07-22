@@ -15,14 +15,14 @@ import { entityAmenityRouter } from "./entityAmenities/enityAmenities.routes";
 import { analyticsRouter } from "./analytics/analytics.route";
 import { wishlistRouter } from "./wishlist/wishlist.route";
 import { stripeRouter } from "./stripe/stripe.routes"; // Important: must come before body parsers
+import { contactRouter } from "./contact/contactRoutes";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Use Stripe routes BEFORE global body parser!
-app.use("/api", stripeRouter);
+
 
 // Global middlewares (after Stripe raw body handling)
 app.use(express.json());
@@ -46,6 +46,8 @@ app.get("/", (req, res: Response) => {
 });
 
 // Other routes
+// Use Stripe routes BEFORE global body parser!
+app.use("/api", stripeRouter);
 app.use("/api", authRouter);
 app.use("/api", userRouter);
 app.use("/api", bookingRouter);
@@ -54,6 +56,7 @@ app.use("/api", roomRouter);
 app.use("/api", ticketRouter);
 app.use("/api", paymentRouter);
 app.use("/api", amenityRouter);
+app.use("/api", contactRouter);
 app.use("/api", wishlistRouter);
 app.use("/api", analyticsRouter);
 app.use("/api", addressRouter);
