@@ -1,5 +1,5 @@
 import db from "../drizzle/db";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, gte, sql } from "drizzle-orm";
 import { rooms, TRoomSelect } from "../drizzle/schema";
 import { format } from "date-fns";
 
@@ -38,10 +38,11 @@ export const checkRoomAvailabilityService = async ({
               AND bookings."checkOutDate" >= ${formattedCheckIn}
             )
           )`,
-          capacity ? eq(rooms.capacity, capacity) : sql`TRUE`
+          capacity ? gte(rooms.capacity, capacity) : sql`TRUE`
+
         )
       )
-      .orderBy(rooms.roomId);
+      .orderBy(desc(rooms.roomId));
 
     const availableRooms = await query;
 
