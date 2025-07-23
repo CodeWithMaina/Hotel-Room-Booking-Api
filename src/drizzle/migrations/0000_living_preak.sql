@@ -78,6 +78,13 @@ CREATE TABLE "hotels" (
 	"updatedAt" timestamp DEFAULT now()
 );
 --> statement-breakpoint
+CREATE TABLE "newsletterSubscribers" (
+	"subscriberId" serial PRIMARY KEY NOT NULL,
+	"email" text NOT NULL,
+	"subscribedAt" timestamp DEFAULT now(),
+	CONSTRAINT "newsletterSubscribers_email_unique" UNIQUE("email")
+);
+--> statement-breakpoint
 CREATE TABLE "payments" (
 	"paymentId" serial PRIMARY KEY NOT NULL,
 	"bookingId" integer,

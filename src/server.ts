@@ -17,6 +17,7 @@ import { wishlistRouter } from "./wishlist/wishlist.route";
 import { stripeRouter } from "./stripe/stripe.routes"; // Important: must come before body parsers
 import { contactRouter } from "./contact/contactRoutes";
 import { availabilityRouter } from "./availability/availability.route";
+import { newsletterRouter } from "./newletter/newsletter.route";
 
 dotenv.config();
 
@@ -57,6 +58,7 @@ app.use("/api", ticketRouter);
 app.use("/api", paymentRouter);
 app.use("/api", amenityRouter);
 app.use("/api", contactRouter);
+app.use("/api", newsletterRouter);
 app.use("/api", availabilityRouter);
 app.use("/api", wishlistRouter);
 app.use("/api", analyticsRouter);

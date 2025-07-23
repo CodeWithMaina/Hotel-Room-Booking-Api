@@ -141,6 +141,21 @@ export const cities = pgTable('cities', {
   createdAt: timestamp('createdAt').defaultNow(),
 });
 
+export const newsletterSubscribers = pgTable("newsletterSubscribers", {
+  subscriberId: serial("subscriberId").primaryKey(),
+  email: text("email").notNull().unique(),
+  subscribedAt: timestamp("subscribedAt").defaultNow(),
+});
+
+export const contactMessages = pgTable("contactMessages", {
+  messageId: serial("messageId").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  createdAt: timestamp("createdAt").defaultNow(),
+});
+
+
 // ====================== RELATIONS ======================
 export const usersRelations = relations(users, ({ many }) => ({
   bookings: many(bookings),
@@ -271,3 +286,6 @@ export type TWishlistInsert = typeof wishlist.$inferInsert;
 
 export type TCitySelect = typeof cities.$inferSelect;
 export type TCityInsert = typeof cities.$inferInsert;
+
+export type TNewsletterSubscriberSelect = typeof newsletterSubscribers.$inferSelect;
+export type TNewsletterSubscriberInsert = typeof newsletterSubscribers.$inferInsert;
