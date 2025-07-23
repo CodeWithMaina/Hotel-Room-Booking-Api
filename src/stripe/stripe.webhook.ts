@@ -1,101 +1,170 @@
+// stripe.webhook.ts
 import { Request, Response } from "express";
 import Stripe from "stripe";
-import { stripe } from "./stripe"; // your Stripe instance
-import dotenv from "dotenv";
+import { stripe } from "./stripe";
+import { payments } from "../drizzle/schema";
 import db from "../drizzle/db";
-import { bookings } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
-import { sendNotificationEmail } from "../middleware/googleMailer";
-
-dotenv.config();
+import {
+  createPaymentService,
+  updatePaymentByTransactionIdService,
+} from "../payment/payment.service";
+import { updateBookingService } from "../booking/booking.service";
 
 export const webhookHandler = async (req: Request, res: Response) => {
-  console.log("🔥 Stripe webhook received");
-
   const sig = req.headers["stripe-signature"] as string;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!webhookSecret) {
+    console.error("❌ STRIPE_WEBHOOK_SECRET is not configured");
+     res.status(500).send("Server configuration error");
+     return;
+  }
 
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(
-      req.body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
-    console.log("✅ Webhook verified:", event.type);
-  } catch (err) {
-    console.error("❌ Stripe webhook signature verification failed:", err);
-     res.status(400).send(`Webhook Error: ${(err as Error).message}`);
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+  } catch (err: any) {
+    console.error(`❌ Webhook signature verification failed: ${err.message}`);
+     res.status(400).send(`Webhook Error: ${err.message}`);
      return;
   }
 
-  // Handle the event types you expect
   switch (event.type) {
-    case "checkout.session.completed": {
-      const session = event.data.object as Stripe.Checkout.Session;
-
-      console.log("✅ Checkout session completed:", session.id);
-
-      const bookingId = session.metadata?.bookingId;
-      const userEmail = session.customer_details?.email;
-
-      if (!bookingId) {
-        console.error("⚠️ Missing bookingId in session metadata");
-         res.status(400).send("Missing bookingId");
-         return;
-      }
-
-      try {
-        const updatedBooking = await db
-          .update(bookings)
-          .set({ bookingStatus: "Confirmed" })
-          .where(eq(bookings.bookingId, parseInt(bookingId)))
-          .returning();
-
-        console.log("✅ Booking updated:", updatedBooking);
-
-        // if (userEmail) {
-        //   await sendNotificationEmail({
-        //     to: userEmail,
-        //     subject: "Booking Confirmed",
-        //     html: `<p>Your payment was successful and your booking #${bookingId} is confirmed!</p>`,
-        //   });
-
-        //   console.log("📧 Confirmation email sent to", userEmail);
-        // }
-
-        res.status(200).json({ received: true });
-      } catch (err) {
-        console.error("❌ Failed to update booking:", err);
-         res.status(500).send("Internal server error");
-         return;
-      }
-
+    case "checkout.session.completed":
+      await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
       break;
-    }
 
-    case "payment_intent.payment_failed": {
-      const intent = event.data.object as Stripe.PaymentIntent;
-      // const userEmail = intent?.receipt_email || intent?.charges?.data?.[0]?.billing_details?.email;
-
-      console.log("⚠️ Payment failed:", intent.id);
-
-      // if (userEmail) {
-      //   await sendNotificationEmail({
-      //     to: userEmail,
-      //     subject: "Payment Failed",
-      //     html: `<p>Your payment failed. Please try again or use a different payment method.</p>`,
-      //   });
-
-      //   console.log("📧 Failure email sent to", userEmail);
-      // }
-
-      res.status(200).json({ received: true });
+    case "payment_intent.succeeded":
+      await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
       break;
-    }
+
+    case "payment_intent.payment_failed":
+      await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
+      break;
+
+    case "charge.succeeded":
+      console.log(`✅ Charge succeeded: ${event.data.object.id}`);
+      break;
+
+    case "charge.failed":
+      console.log(`❌ Charge failed: ${event.data.object.id}`);
+      break;
 
     default:
-      console.warn("🚫 Unhandled event type:", event.type);
-      res.status(200).send("Unhandled event type");
+      console.log(`⚠️ Unhandled event type: ${event.type}`);
+  }
+
+  res.json({ received: true });
+};
+
+// ---------------------------------------
+// Handlers
+// ---------------------------------------
+
+const handleCheckoutSessionCompleted = async (session: Stripe.Checkout.Session) => {
+  try {
+    const bookingId = session.metadata?.bookingId;
+    const paymentIntentId = session.payment_intent as string;
+
+    if (!bookingId || !paymentIntentId) {
+      console.error("❌ Missing bookingId or payment_intent in session metadata");
+      return;
+    }
+
+    const bookingIdNum = parseInt(bookingId);
+    if (isNaN(bookingIdNum)) {
+      console.error("❌ Invalid bookingId in session metadata");
+      return;
+    }
+
+    // Check if payment record already exists
+    const existingPayment = await db.query.payments.findFirst({
+      where: eq(payments.transactionId, paymentIntentId),
+    });
+
+    if (!existingPayment) {
+      await createPaymentService({
+        bookingId: bookingIdNum,
+        amount: String(session.amount_total),
+        transactionId: paymentIntentId,
+        paymentMethod: "card",
+        paymentStatus: "Pending",
+      });
+      console.log(`✅ Created payment record for bookingId ${bookingIdNum}`);
+    } else {
+      console.log(`ℹ️ Payment already exists for bookingId ${bookingIdNum}`);
+    }
+  } catch (err) {
+    console.error("❌ Error in handleCheckoutSessionCompleted:", err);
+  }
+};
+
+const handlePaymentIntentSucceeded = async (paymentIntent: Stripe.PaymentIntent) => {
+  try {
+    const transactionId = paymentIntent.id;
+
+    const payment = await db.query.payments.findFirst({
+      where: eq(payments.transactionId, transactionId),
+    });
+
+    if (!payment) {
+      console.error(`❌ No payment record found for transactionId: ${transactionId}`);
+      return;
+    }
+
+    if (payment.transactionId != null) {
+      await updatePaymentByTransactionIdService(payment.transactionId, {
+        paymentStatus: "Completed",
+      });
+    } else {
+      console.error("❌ Cannot update payment: transactionId is null or undefined");
+    }
+
+    if (payment.bookingId != null) {
+      await updateBookingService(payment.bookingId, {
+        bookingStatus: "Confirmed",
+      });
+      console.log(`✅ Payment confirmed and booking updated for bookingId ${payment.bookingId}`);
+    } else {
+      console.error("❌ Cannot update booking: bookingId is null or undefined");
+    }
+  } catch (err) {
+    console.error("❌ Error in handlePaymentIntentSucceeded:", err);
+  }
+};
+
+const handlePaymentIntentFailed = async (paymentIntent: Stripe.PaymentIntent) => {
+  try {
+    const transactionId = paymentIntent.id;
+
+    const payment = await db.query.payments.findFirst({
+      where: eq(payments.transactionId, transactionId),
+    });
+
+    if (!payment) {
+      console.error(`❌ No payment record found for failed paymentIntent: ${transactionId}`);
+      return;
+    }
+
+    if (payment.transactionId != null) {
+      await updatePaymentByTransactionIdService(payment.transactionId, {
+        paymentStatus: "Failed",
+      });
+    } else {
+      console.error("❌ Cannot update payment: transactionId is null or undefined");
+    }
+
+    if (payment.bookingId != null) {
+      await updateBookingService(payment.bookingId, {
+        bookingStatus: "Cancelled",
+      });
+      console.log(`❌ Payment failed. Booking cancelled for bookingId ${payment.bookingId}`);
+    } else {
+      console.error("❌ Cannot update booking: bookingId is null or undefined");
+    }
+  } catch (err) {
+    console.error("❌ Error in handlePaymentIntentFailed:", err);
   }
 };

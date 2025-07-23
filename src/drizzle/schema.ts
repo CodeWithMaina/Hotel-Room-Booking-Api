@@ -41,7 +41,7 @@ export const hotels = pgTable('hotels', {
   name: varchar('name', { length: 255 }).notNull(),
   location: varchar('location', { length: 255 }),
   thumbnail: varchar('thumbnail'),
-  gallery: varchar('gallery', { length: 255 }).array(), // <-- gallery added
+  gallery: varchar('gallery', { length: 255 }).array(), 
   contactPhone: varchar('contactPhone', { length: 20 }),
   category: varchar('category', { length: 100 }),
   rating: numeric('rating', { precision: 2, scale: 1 }),
@@ -56,7 +56,7 @@ export const rooms = pgTable('rooms', {
   pricePerNight: numeric('pricePerNight', { precision: 10, scale: 2 }).notNull(),
   capacity: integer('capacity').notNull(),
   thumbnail: varchar('thumbnail'),
-  gallery: varchar('gallery', { length: 255 }).array(), // <-- gallery added
+  gallery: varchar('gallery', { length: 255 }).array(), 
   isAvailable: boolean('isAvailable').default(true),
   createdAt: timestamp('createdAt').defaultNow(),
 });

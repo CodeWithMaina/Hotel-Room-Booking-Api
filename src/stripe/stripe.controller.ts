@@ -47,7 +47,7 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
         bookingId: String(bookingId),
       },
       success_url: `${config.FRONTEND_URL}/user/payment/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${config.FRONTEND_URL}/user/payment/payment-cancelled`,
+      cancel_url: `${config.FRONTEND_URL}/user/payment/payment-failed?session_id={CHECKOUT_SESSION_ID}`,
     });
 
     res.status(200).json({
