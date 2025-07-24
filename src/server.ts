@@ -34,18 +34,17 @@ app.use(
   })
 );
 
+app.use(logger);
+
+
 app.use("/api", stripeRouter);
 
 // Global middlewares (after Stripe raw body handling)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(logger);
 // app.use(rateLimiterMiddleware);
 
-// Default route
-app.get("/", (req, res: Response) => {
-  res.send("Welcome to Hotel Room Booking Backend");
-});
+
 
 // Other routes
 // Use Stripe routes BEFORE global body parser!
@@ -64,6 +63,11 @@ app.use("/api", wishlistRouter);
 app.use("/api", analyticsRouter);
 app.use("/api", addressRouter);
 app.use("/api", entityAmenityRouter);
+
+// Default route
+app.get("/", (req, res: Response) => {
+  res.send("Welcome to Hotel Room Booking Backend");
+});
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
