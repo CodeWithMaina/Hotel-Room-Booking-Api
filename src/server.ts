@@ -24,14 +24,6 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use("/api", stripeRouter);
-
-// Global middlewares (after Stripe raw body handling)
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(logger);
-// app.use(rateLimiterMiddleware);
-
 // CORS
 app.use(
   cors({
@@ -41,6 +33,14 @@ app.use(
     credentials: true,
   })
 );
+
+app.use("/api", stripeRouter);
+
+// Global middlewares (after Stripe raw body handling)
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(logger);
+// app.use(rateLimiterMiddleware);
 
 // Default route
 app.get("/", (req, res: Response) => {

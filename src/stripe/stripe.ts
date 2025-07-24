@@ -15,7 +15,7 @@ export const config = {
   STRIPE: {
     SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
-    API_VERSION: '2023-08-16',
+    API_VERSION: '2025-06-30.basil',
   },
   NODE_ENV: process.env.NODE_ENV || 'development',
 };
