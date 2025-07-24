@@ -1,6 +1,7 @@
 import express, { Response } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import bodyParser from "body-parser";
 import { userRouter } from "./user/user.route";
 import { bookingRouter } from "./booking/booking.route";
 import { hotelRouter } from "./hotel/hotel.route";
@@ -14,17 +15,18 @@ import { addressRouter } from "./addresses/addresses.route";
 import { entityAmenityRouter } from "./entityAmenities/enityAmenities.routes";
 import { analyticsRouter } from "./analytics/analytics.route";
 import { wishlistRouter } from "./wishlist/wishlist.route";
-import { stripeRouter } from "./stripe/stripe.routes"; // Important: must come before body parsers
+import { stripeRouter } from "./stripe/stripe.routes";
 import { contactRouter } from "./contact/contact.routes";
 import { availabilityRouter } from "./availability/availability.route";
 import { newsletterRouter } from "./newletter/newsletter.route";
+import { webhookHandler } from "./stripe/stripe.webhook";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CORS
+// 1. Apply CORS first
 app.use(
   cors({
     origin: ["http://localhost:5173"],
@@ -34,20 +36,25 @@ app.use(
   })
 );
 
+// 2. Stripe webhook route - must come BEFORE any body parsers
+app.post(
+  "/api/webhook",
+  bodyParser.raw({ type: "application/json" }),
+  (req, res, next) => {
+    console.log("Raw webhook body received (length):", req.body?.length);
+    next();
+  },
+  webhookHandler
+);
+
+// 3. Logger middleware
 app.use(logger);
 
-
-app.use("/api", stripeRouter);
-
-// Global middlewares (after Stripe raw body handling)
+// 4. Global body parsers for all other routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// app.use(rateLimiterMiddleware);
 
-
-
-// Other routes
-// Use Stripe routes BEFORE global body parser!
+// 5. Mount all other routes
 app.use("/api", authRouter);
 app.use("/api", userRouter);
 app.use("/api", bookingRouter);
@@ -63,6 +70,9 @@ app.use("/api", wishlistRouter);
 app.use("/api", analyticsRouter);
 app.use("/api", addressRouter);
 app.use("/api", entityAmenityRouter);
+
+// 6. Stripe routes (except webhook)
+app.use("/api", stripeRouter);
 
 // Default route
 app.get("/", (req, res: Response) => {
