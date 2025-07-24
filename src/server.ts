@@ -36,12 +36,15 @@ app.use(
   })
 );
 
-// 2. Stripe webhook route - must come BEFORE any body parsers
-app.post(
-  "/api/webhook",
-  bodyParser.raw({ type: "application/json" }),
-  (req, res, next) => {
-    console.log("Raw webhook body received (length):", req.body?.length);
+// 2. Special middleware for Stripe webhook
+app.post("/api/webhook", 
+  // Middleware to get raw body
+  express.raw({ type: 'application/json' }),
+  // Verification middleware
+  (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const body = req.body.toString('utf8');
+    console.log('Raw body:', body);
+    console.log('Stripe-Signature:', req.headers['stripe-signature']);
     next();
   },
   webhookHandler
