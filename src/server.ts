@@ -15,7 +15,7 @@ import { entityAmenityRouter } from "./entityAmenities/enityAmenities.routes";
 import { analyticsRouter } from "./analytics/analytics.route";
 import { wishlistRouter } from "./wishlist/wishlist.route";
 import { stripeRouter } from "./stripe/stripe.routes"; // Important: must come before body parsers
-import { contactRouter } from "./contact/contactRoutes";
+import { contactRouter } from "./contact/contact.routes";
 import { availabilityRouter } from "./availability/availability.route";
 import { newsletterRouter } from "./newletter/newsletter.route";
 

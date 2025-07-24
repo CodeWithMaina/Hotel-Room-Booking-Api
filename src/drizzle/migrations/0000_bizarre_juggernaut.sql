@@ -46,6 +46,14 @@ CREATE TABLE "cities" (
 	"createdAt" timestamp DEFAULT now()
 );
 --> statement-breakpoint
+CREATE TABLE "contactMessages" (
+	"messageId" serial PRIMARY KEY NOT NULL,
+	"name" varchar(100) NOT NULL,
+	"email" varchar(255) NOT NULL,
+	"message" text NOT NULL,
+	"createdAt" timestamp DEFAULT now()
+);
+--> statement-breakpoint
 CREATE TABLE "customerSupportTickets" (
 	"ticketId" serial PRIMARY KEY NOT NULL,
 	"userId" integer,

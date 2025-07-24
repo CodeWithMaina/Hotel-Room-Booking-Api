@@ -289,3 +289,6 @@ export type TCityInsert = typeof cities.$inferInsert;
 
 export type TNewsletterSubscriberSelect = typeof newsletterSubscribers.$inferSelect;
 export type TNewsletterSubscriberInsert = typeof newsletterSubscribers.$inferInsert;
+
+export type TContactMessagesSelect = typeof contactMessages.$inferSelect;
+export type TContactMessagesInsert = typeof contactMessages.$inferInsert;
