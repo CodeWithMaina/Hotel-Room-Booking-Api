@@ -25,6 +25,10 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+
+// 2. Stripe webhook route (⚠️ must be raw body — DO NOT parse as JSON)
+app.post("/api/webhook", express.raw({ type: 'application/json' }), webhookHandler);
+
 // 1. CORS
 app.use(
   cors({
@@ -35,8 +39,6 @@ app.use(
   })
 );
 
-// 2. Stripe webhook route (⚠️ must be raw body — DO NOT parse as JSON)
-app.post("/api/webhook", express.raw({ type: 'application/json' }), webhookHandler);
 
 // 3. Logger middleware
 app.use(logger);
