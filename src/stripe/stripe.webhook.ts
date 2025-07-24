@@ -11,9 +11,8 @@ import {
 } from "../payment/payment.service";
 import { updateBookingService } from "../booking/booking.service";
 
-export const webhookHandler = async (req: Request, res: Response) => {
-  console.log('🔔 Webhook received');
-  const sig = req.headers["stripe-signature"] as string;
+export const webhookHandler = async (req: Request, res: Response): Promise<void> => {
+  const sig = req.headers["stripe-signature"] as string | undefined;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
@@ -22,47 +21,60 @@ export const webhookHandler = async (req: Request, res: Response) => {
      return;
   }
 
+  if (!sig) {
+    console.error("❌ Stripe signature missing in headers");
+     res.status(400).send("Missing Stripe signature");
+     return;
+  }
+
   let event: Stripe.Event;
-  let rawBody = req.body;
 
   try {
-    console.log(`🔍 Verifying webhook signature`);
-    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
-    console.log(`✅ Webhook verified: ${event.type}`);
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err: any) {
-    console.error(`❌ Webhook signature verification failed: ${err.message}`);
+    console.error(`❌ Webhook verification failed: ${err.message}`);
      res.status(400).send(`Webhook Error: ${err.message}`);
      return;
   }
 
-  switch (event.type) {
-    case "checkout.session.completed":
-      await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
-      break;
+  try {
+    switch (event.type) {
+      case "checkout.session.completed":
+        await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
+        break;
 
-    case "payment_intent.succeeded":
-      await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
-      break;
+      case "payment_intent.succeeded":
+        await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
+        break;
 
-    case "payment_intent.payment_failed":
-      await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
-      break;
+      case "payment_intent.payment_failed":
+        await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
+        break;
 
-    case "charge.succeeded":
-      console.log(`✅ Charge succeeded: ${event.data.object.id}`);
-      break;
+      case "charge.succeeded":
+        if (process.env.NODE_ENV !== "production") {
+          console.log(`✅ Charge succeeded: ${event.data.object.id}`);
+        }
+        break;
 
-    case "charge.failed":
-      console.log(`❌ Charge failed: ${event.data.object.id}`);
-      break;
+      case "charge.failed":
+        if (process.env.NODE_ENV !== "production") {
+          console.warn(`❌ Charge failed: ${event.data.object.id}`);
+        }
+        break;
 
-    default:
-      console.log(`⚠️ Unhandled event type: ${event.type}`);
+      default:
+        console.info(`⚠️ Unhandled event type: ${event.type}`);
+    }
+
+     res.status(200).json({ received: true });
+     return;
+  } catch (handlerError: any) {
+    console.error(`❌ Error processing event type '${event.type}': ${handlerError.message}`);
+     res.status(500).send("Internal server error while handling event");
+     return
   }
-
-  res.json({ received: true });
 };
-
 // ---------------------------------------
 // Handlers
 // ---------------------------------------
