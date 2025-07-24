@@ -1,7 +1,6 @@
-import express, { Response } from "express";
+import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import bodyParser from "body-parser";
 import { userRouter } from "./user/user.route";
 import { bookingRouter } from "./booking/booking.route";
 import { hotelRouter } from "./hotel/hotel.route";
@@ -26,7 +25,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// 1. Apply CORS first
+// 1. CORS
 app.use(
   cors({
     origin: ["http://localhost:5173"],
@@ -36,28 +35,17 @@ app.use(
   })
 );
 
-// 2. Special middleware for Stripe webhook
-app.post("/api/webhook", 
-  // Middleware to get raw body
-  express.raw({ type: 'application/json' }),
-  // Verification middleware
-  (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const body = req.body.toString('utf8');
-    console.log('Raw body:', body);
-    console.log('Stripe-Signature:', req.headers['stripe-signature']);
-    next();
-  },
-  webhookHandler
-);
+// 2. Stripe webhook route (⚠️ must be raw body — DO NOT parse as JSON)
+app.post("/api/webhook", express.raw({ type: 'application/json' }), webhookHandler);
 
 // 3. Logger middleware
 app.use(logger);
 
-// 4. Global body parsers for all other routes
+// 4. JSON and URL-encoded parsers for other routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 5. Mount all other routes
+// 5. Routes
 app.use("/api", authRouter);
 app.use("/api", userRouter);
 app.use("/api", bookingRouter);
@@ -74,14 +62,15 @@ app.use("/api", analyticsRouter);
 app.use("/api", addressRouter);
 app.use("/api", entityAmenityRouter);
 
-// 6. Stripe routes (except webhook)
+// 6. Stripe-specific routes (not webhook)
 app.use("/api", stripeRouter);
 
-// Default route
-app.get("/", (req, res: Response) => {
+// 7. Default health check
+app.get("/", (req: Request, res: Response) => {
   res.send("Welcome to Hotel Room Booking Backend");
 });
 
+// 8. Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

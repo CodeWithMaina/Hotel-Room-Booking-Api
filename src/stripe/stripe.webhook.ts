@@ -12,99 +12,49 @@ import {
 import { updateBookingService } from "../booking/booking.service";
 
 export const webhookHandler = async (req: Request, res: Response): Promise<void> => {
-  // 1. Log incoming request for debugging
-  console.log('Webhook received - headers:', req.headers);
-  console.log('Webhook received - raw body length:', req.body?.length);
-
-  // 2. Verify required configuration
   const sig = req.headers["stripe-signature"] as string;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  if (!webhookSecret) {
-    console.error("❌ STRIPE_WEBHOOK_SECRET is not configured");
-     res.status(500).json({ error: "Server configuration error" });
-     return;
-  }
-
-  if (!sig) {
-    console.error("❌ Stripe signature missing in headers");
-     res.status(400).json({ error: "Missing Stripe signature" });
-     return;
-  }
-
-  // 3. Verify raw body format
-  if (!Buffer.isBuffer(req.body)) {
-    console.error("❌ Request body is not in raw format");
-     res.status(400).json({ error: "Invalid request body format" });
+  if (!webhookSecret || !sig) {
+     res.status(400).send("Missing Stripe signature or secret");
      return;
   }
 
   let event: Stripe.Event;
 
   try {
-    // 4. Convert raw body to string for verification
-    const rawBody = req.body.toString('utf8');
-    console.log('Raw body content:', rawBody); // Debug log
-    
-    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
-    console.log(`✅ Webhook verified - Event type: ${event.type}`);
+    // req.body is a Buffer because of express.raw()
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    console.log(`✅ Webhook verified: ${event.type}`);
   } catch (err: any) {
-    console.error(`❌ Webhook verification failed: ${err.message}`);
-    console.error('Signature:', sig);
-    console.error('Body:', req.body?.toString());
-     res.status(400).json({ 
-      error: `Webhook Error: ${err.message}`,
-      details: process.env.NODE_ENV === 'development' ? {
-        signature: sig,
-        bodySample: req.body?.toString().slice(0, 100)
-      } : undefined
-    });
-    return;
+    console.error("❌ Webhook signature verification failed:", err.message);
+     res.status(400).send(`Webhook Error: ${err.message}`);
+     return;
   }
 
-  // 5. Process the event
+  // Process event
   try {
     switch (event.type) {
       case "checkout.session.completed":
         await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
         break;
-
       case "payment_intent.succeeded":
         await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
         break;
-
       case "payment_intent.payment_failed":
         await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
         break;
-
-      case "charge.succeeded":
-        console.log(`✅ Charge succeeded: ${event.data.object.id}`);
-        break;
-
-      case "charge.failed":
-        console.warn(`❌ Charge failed: ${event.data.object.id}`);
-        break;
-
       default:
-        console.info(`⚠️ Unhandled event type: ${event.type}`);
+        console.warn(`Unhandled event type: ${event.type}`);
     }
 
-     res.status(200).json({ received: true });
-     return;
-  } catch (handlerError: any) {
-    console.error(`❌ Error processing event type '${event.type}':`, handlerError);
-     res.status(500).json({ 
-      error: "Internal server error while handling event",
-      details: process.env.NODE_ENV === 'development' ? {
-        eventType: event.type,
-        error: handlerError.message,
-        stack: handlerError.stack
-      } : undefined
-      
-    });
-    return;
+    res.status(200).json({ received: true });
+  } catch (err: any) {
+    console.error(`❌ Error processing event: ${event.type}`, err.message);
+    res.status(500).json({ error: "Webhook handler failed" });
   }
 };
+
 // ---------------------------------------
 // Handlers
 // ---------------------------------------
