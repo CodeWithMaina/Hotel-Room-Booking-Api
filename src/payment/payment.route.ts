@@ -2,6 +2,7 @@ import { Router } from "express";
 import { 
   createPaymentController, 
   deletePaymentController, 
+  getPaymentByBookingId, 
   getPaymentByIdController, 
   getPaymentsByUserIdController, 
   getPaymentsController, 
@@ -16,3 +17,4 @@ paymentRouter.post("/payment", createPaymentController);
 paymentRouter.put("/payment/:id", updatePaymentController);
 paymentRouter.delete("/payment/:id", deletePaymentController);
 paymentRouter.get("/payment/user/:userId", getPaymentsByUserIdController);
+paymentRouter.get("/payment/:bookingId", getPaymentByBookingId);

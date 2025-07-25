@@ -58,19 +58,23 @@ export const getPaymentByBookingId = async (req: Request, res: Response) => {
     const bookingId = parseInt(req.params.bookingId, 10);
     
     if (isNaN(bookingId)) {
-      return res.status(400).json({ error: 'Invalid booking ID' });
+       res.status(400).json({ error: 'Invalid booking ID' });
+       return;
     }
 
     const payment = await getPaymentByBookingIdService(bookingId);
     
     if (!payment) {
-      return res.status(404).json({ error: 'Payment not found' });
+       res.status(404).json({ error: 'Payment not found' });
+       return;
     }
 
-    return res.status(200).json(payment);
+     res.status(200).json(payment);
+     return;
   } catch (error) {
     console.error('Error fetching payment by booking ID:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+     res.status(500).json({ error: 'Internal server error' });
+     return;
   }
 };
 
