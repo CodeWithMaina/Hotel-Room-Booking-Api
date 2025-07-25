@@ -8,9 +8,16 @@ import {
   createPaymentService,
   updatePaymentByTransactionIdService,
 } from "../payment/payment.service";
-import { updateBookingService } from "../booking/booking.service";
+import {
+  getBookingByIdService,
+  updateBookingService,
+} from "../booking/booking.service";
+import { sendBookingEmail } from "./paymentEmailingConfirmation";
 
-export const webhookHandler = async (req: Request, res: Response): Promise<void> => {
+export const webhookHandler = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   console.log("🔥 Incoming Stripe webhook");
 
   const sig = req.headers["stripe-signature"] as string;
@@ -36,13 +43,19 @@ export const webhookHandler = async (req: Request, res: Response): Promise<void>
   try {
     switch (event.type) {
       case "checkout.session.completed":
-        await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
+        await handleCheckoutSessionCompleted(
+          event.data.object as Stripe.Checkout.Session
+        );
         break;
       case "payment_intent.succeeded":
-        await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
+        await handlePaymentIntentSucceeded(
+          event.data.object as Stripe.PaymentIntent
+        );
         break;
       case "payment_intent.payment_failed":
-        await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
+        await handlePaymentIntentFailed(
+          event.data.object as Stripe.PaymentIntent
+        );
         break;
       default:
         console.warn(`⚠️ Unhandled event type: ${event.type}`);
@@ -58,15 +71,20 @@ export const webhookHandler = async (req: Request, res: Response): Promise<void>
 
 // 🧠 HANDLERS BELOW
 
-const handleCheckoutSessionCompleted = async (session: Stripe.Checkout.Session) => {
+const handleCheckoutSessionCompleted = async (
+  session: Stripe.Checkout.Session
+) => {
   console.log(`🔄 Handling checkout.session.completed: ${session.id}`);
 
   try {
     const bookingId = session.metadata?.bookingId;
+    const userEmail = session.customer_email as string;
     const paymentIntentId = session.payment_intent as string;
 
     if (!bookingId || !paymentIntentId) {
-      throw new Error("Missing bookingId or payment_intent in metadata/session");
+      throw new Error(
+        "Missing bookingId or payment_intent in metadata/session"
+      );
     }
 
     const bookingIdNum = parseInt(bookingId);
@@ -81,7 +99,8 @@ const handleCheckoutSessionCompleted = async (session: Stripe.Checkout.Session) 
       return;
     }
 
-    const paymentStatus = session.payment_status === "paid" ? "Completed" : "Pending";
+    const paymentStatus =
+      session.payment_status === "paid" ? "Completed" : "Pending";
 
     await createPaymentService({
       bookingId: bookingIdNum,
@@ -91,14 +110,24 @@ const handleCheckoutSessionCompleted = async (session: Stripe.Checkout.Session) 
       paymentStatus,
     });
 
-    console.log(`✅ Payment recorded for bookingId ${bookingIdNum}, status: ${paymentStatus}`);
+    await sendBookingEmail("BOOKING_PAYMENT_SUCCESS", "success", {
+      bookingId: bookingIdNum,
+      amount: Number(session.amount_total ? session.amount_total / 100 : 0),
+      transactionId: paymentIntentId,
+    });
+
+    console.log(
+      `✅ Payment recorded for bookingId ${bookingIdNum}, status: ${paymentStatus}`
+    );
   } catch (err) {
     console.error("❌ Error in handleCheckoutSessionCompleted:", err);
     throw err;
   }
 };
 
-const handlePaymentIntentSucceeded = async (paymentIntent: Stripe.PaymentIntent) => {
+const handlePaymentIntentSucceeded = async (
+  paymentIntent: Stripe.PaymentIntent
+) => {
   console.log(`🔄 Handling payment_intent.succeeded: ${paymentIntent.id}`);
 
   try {
@@ -130,6 +159,11 @@ const handlePaymentIntentSucceeded = async (paymentIntent: Stripe.PaymentIntent)
         bookingStatus: "Confirmed",
       });
 
+      await sendBookingEmail("BOOKING_CONFIRMED", "confirmation", {
+        bookingId: payment.bookingId,
+        transactionId: payment.transactionId ?? "",
+      });
+
       console.log(`✅ Booking confirmed for bookingId ${payment.bookingId}`);
     }
   } catch (err) {
@@ -138,7 +172,9 @@ const handlePaymentIntentSucceeded = async (paymentIntent: Stripe.PaymentIntent)
   }
 };
 
-const handlePaymentIntentFailed = async (paymentIntent: Stripe.PaymentIntent) => {
+const handlePaymentIntentFailed = async (
+  paymentIntent: Stripe.PaymentIntent
+) => {
   console.log(`❌ Handling payment_intent.payment_failed: ${paymentIntent.id}`);
 
   try {
@@ -162,6 +198,12 @@ const handlePaymentIntentFailed = async (paymentIntent: Stripe.PaymentIntent) =>
       await updateBookingService(payment.bookingId, {
         bookingStatus: "Cancelled",
       });
+
+      await sendBookingEmail("BOOKING_PAYMENT_FAILED", "failure", {
+        bookingId: payment.bookingId,
+        transactionId: payment.transactionId ?? "",
+      });
+
       console.log(`❌ Booking cancelled for bookingId ${payment.bookingId}`);
     }
   } catch (err) {
