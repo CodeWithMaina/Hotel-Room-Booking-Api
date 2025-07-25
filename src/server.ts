@@ -26,7 +26,6 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// 🧪 Health Check
 app.get("/", (req: Request, res: Response) => {
   res.send("✅ Hotel Room Booking Backend is running.");
 });
@@ -35,7 +34,7 @@ app.get("/", (req: Request, res: Response) => {
 app.post(
   "/api/webhook",
   (req, res, next) => {
-    // 🚫 Disable compression if Render applies any
+    //  Disable compression if Render applies any
     res.set("Content-Encoding", "identity");
     next();
   },
@@ -43,10 +42,10 @@ app.post(
   webhookHandler
 );
 
-// 🔐 CORS
+// CORS
 app.use(
   cors({
-    origin: ["http://localhost:5173"], // Change for production
+    origin: ["http://localhost:5173", "https://stay-cloud-rooms.netlify.app"],
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
