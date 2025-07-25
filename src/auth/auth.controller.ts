@@ -37,8 +37,8 @@ export const createUser: RequestHandler = async (
       "Account created successfully",
       `${user.firstName} ${user.lastName}`,
       "Welcome to our Hotel service! Your account has been successfully created.",
-      "http://yourwebsite.com/dashboard",
-      "Go to Dashboard" // Optional: Add button text
+      "https://stay-cloud-rooms.netlify.app",
+      "Go to Dashboard"
     );
     if (!results) {
       res.status(500).json({ error: "Failed to send notification email" });
@@ -139,7 +139,7 @@ export const passwordReset: RequestHandler = async (
 
     console.log("Generated reset token:", resetToken); // Debug log
 
-    const resetLink = `http://localhost:5173/reset-password/${resetToken}`;
+    const resetLink = `https://stay-cloud-rooms.netlify.app/reset-password/${resetToken}`;
     const emailResult = await sendNotificationEmail(
       email,
       "Password Reset Request",
