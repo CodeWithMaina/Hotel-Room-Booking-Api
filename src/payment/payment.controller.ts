@@ -6,6 +6,7 @@ import {
   updatePaymentService,
   deletePaymentService,
   getPaymentsByUserIdService,
+  getPaymentByBookingIdService,
 } from "./payment.service";
 import { TPaymentInsert } from "../drizzle/schema";
 
@@ -50,6 +51,29 @@ export const getPaymentByIdController = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+export const getPaymentByBookingId = async (req: Request, res: Response) => {
+  try {
+    const bookingId = parseInt(req.params.bookingId, 10);
+    
+    if (isNaN(bookingId)) {
+      return res.status(400).json({ error: 'Invalid booking ID' });
+    }
+
+    const payment = await getPaymentByBookingIdService(bookingId);
+    
+    if (!payment) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+
+    return res.status(200).json(payment);
+  } catch (error) {
+    console.error('Error fetching payment by booking ID:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 
 export const createPaymentController = async (req: Request, res: Response) => {
   try {

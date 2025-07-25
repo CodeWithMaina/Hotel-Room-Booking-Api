@@ -31,6 +31,17 @@ export const getPaymentByIdService = async (
   return results || null;
 };
 
+// Get booking by ID
+export const getPaymentByBookingIdService = async (
+  bookingId: number
+): Promise<TPaymentSelect | null> => {
+  const results = await db.query.payments.findFirst({
+    where: eq(payments.bookingId, bookingId),
+  });
+  return results || null;
+};
+
+
 // Create payment
 export const createPaymentService = async (
   paymentData: TPaymentInsert
