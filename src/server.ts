@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+
 import { userRouter } from "./user/user.route";
 import { bookingRouter } from "./booking/booking.route";
 import { hotelRouter } from "./hotel/hotel.route";
@@ -25,29 +26,41 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// 🧪 Health Check
+app.get("/", (req: Request, res: Response) => {
+  res.send("✅ Hotel Room Booking Backend is running.");
+});
 
-// 2. Stripe webhook route (⚠️ must be raw body — DO NOT parse as JSON)
-app.post("/api/webhook", express.raw({ type: 'application/json' }), webhookHandler);
+// 🚨 Stripe Webhook: must come BEFORE express.json()
+app.post(
+  "/api/webhook",
+  (req, res, next) => {
+    // 🚫 Disable compression if Render applies any
+    res.set("Content-Encoding", "identity");
+    next();
+  },
+  express.raw({ type: "application/json" }),
+  webhookHandler
+);
 
-// 1. CORS
+// 🔐 CORS
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: ["http://localhost:5173"], // Change for production
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
 
-
-// 3. Logger middleware
+// 🧾 Logging
 app.use(logger);
 
-// 4. JSON and URL-encoded parsers for other routes
+// 🔍 Body Parsers (for all other routes)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 5. Routes
+// 📦 API Routes
 app.use("/api", authRouter);
 app.use("/api", userRouter);
 app.use("/api", bookingRouter);
@@ -63,16 +76,9 @@ app.use("/api", wishlistRouter);
 app.use("/api", analyticsRouter);
 app.use("/api", addressRouter);
 app.use("/api", entityAmenityRouter);
-
-// 6. Stripe-specific routes (not webhook)
 app.use("/api", stripeRouter);
 
-// 7. Default health check
-app.get("/", (req: Request, res: Response) => {
-  res.send("Welcome to Hotel Room Booking Backend");
-});
-
-// 8. Start server
+// 🚀 Start Server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
