@@ -79,41 +79,49 @@ export const updateUserController = async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.id);
     if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
+       res.status(400).json({ message: "Invalid user ID" });
+       return;
     }
 
     // Parse and validate request body
     const parsed = userUpdateSchema.safeParse(req.body);
 
     if (!parsed.success) {
-      return res.status(400).json({
+       res.status(400).json({
         message: "Validation failed",
         errors: parsed.error.flatten().fieldErrors,
       });
+      return;
     }
 
     const filteredData = parsed.data;
 
     const updatedUser = await updateUserService(userId, filteredData);
     if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
+       res.status(404).json({ message: "User not found" });
+       return;
     }
 
-    return res.status(200).json(updatedUser);
+     res.status(200).json(updatedUser);
+      return;
   } catch (error: any) {
     console.error("Update user error:", error);
     
     if (error.code === '23505') {
-      return res.status(409).json({
+       res.status(409).json({
         message: "Email already exists",
         error: "email_taken",
       });
+      return;
+
     }
 
-    return res.status(500).json({
+     res.status(500).json({
       message: "Failed to update user",
       error: error.message,
     });
+      return;
+
   }
 };
 
