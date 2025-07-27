@@ -1,15 +1,6 @@
 import { Request, Response } from "express";
 import db from "../drizzle/db";
-import {
-  and,
-  eq,
-  gte,
-  inArray,
-  lte,
-  ne,
-  or,
-  sql,
-} from "drizzle-orm";
+import { and, eq, gte, inArray, lte, ne, or, sql } from "drizzle-orm";
 import {
   amenities,
   bookings,
@@ -23,14 +14,13 @@ import { TRoomInsert, TRoomSelect } from "../drizzle/schema";
 import { TRoomAmenity, TRoomWithAmenities } from "../types/roomTypes";
 import { getAmenitiesForOneEntity } from "../entityAmenities/enityAmenities.service";
 
-
 type TEntityType = "room" | "hotel";
 
 export const getRoomsService = async (): Promise<TRoomSelect[]> => {
   return await db.query.rooms.findMany({
     with: {
       roomType: true,
-    }
+    },
   });
 };
 
@@ -41,7 +31,7 @@ export const getRoomByIdService = async (
     where: eq(rooms.roomId, roomId),
     with: {
       roomType: true,
-    }
+    },
   });
   return result || null;
 };
@@ -61,24 +51,24 @@ export const updateRoomService = async (
   }
 ): Promise<TRoomSelect | null> => {
   try {
-
     // Prepare the update data
-    const { amenities, roomType, ...roomUpdateData } = roomData;
+    const { amenities = [], roomType, ...roomUpdateData } = roomData;
 
     // Ensure createdAt is a proper Date object if it exists
-    if (roomUpdateData.createdAt) {
+    if (roomUpdateData.createdAt && !(roomUpdateData.createdAt instanceof Date)) {
       roomUpdateData.createdAt = new Date(roomUpdateData.createdAt);
     }
 
     // Update room type if provided
-    if (roomType && roomData.roomTypeId) {
+    if (roomType && roomUpdateData.roomTypeId) {
       const typeUpdateData = { ...roomType };
-      if (typeUpdateData.createdAt) {
+      // Ensure roomType createdAt is properly formatted
+      if (typeUpdateData.createdAt && !(typeUpdateData.createdAt instanceof Date)) {
         typeUpdateData.createdAt = new Date(typeUpdateData.createdAt);
       }
       await db.update(roomTypes)
         .set(typeUpdateData)
-        .where(eq(roomTypes.roomTypeId, roomData.roomTypeId));
+        .where(eq(roomTypes.roomTypeId, roomUpdateData.roomTypeId));
     }
 
     // Update basic room info
@@ -90,28 +80,24 @@ export const updateRoomService = async (
     
     if (!updatedRoom) return null;
     
-    // Handle amenities if provided
-    if (amenities) {
-      // First delete existing amenities for this room
-      await db.delete(entityAmenities)
-        .where(
-          and(
-            eq(entityAmenities.entityId, roomId),
-            eq(entityAmenities.entityType, "room")
-          )
-        );
-      
-      // Insert new amenities if any
-      if (amenities.length > 0) {
-        await db.insert(entityAmenities).values(
-          amenities.map(amenityId => ({
-            amenityId,
-            entityId: roomId,
-            entityType: "room" as TEntityType,
-            createdAt: new Date() // Ensure createdAt is a Date object
-          }))
-        );
-      }
+    // Handle amenities
+    await db.delete(entityAmenities)
+      .where(
+        and(
+          eq(entityAmenities.entityId, roomId),
+          eq(entityAmenities.entityType, "room")
+        )
+      );
+    
+    if (amenities.length > 0) {
+      await db.insert(entityAmenities).values(
+        amenities.map(amenityId => ({
+          amenityId,
+          entityId: roomId,
+          entityType: "room" as TEntityType,
+          createdAt: new Date() // Ensure createdAt is a Date object
+        }))
+      );
     }
     
     return updatedRoom;
@@ -139,7 +125,7 @@ export const getRoomByHotelIdService = async (
     where: eq(rooms.hotelId, hotelId),
     with: {
       roomType: true,
-    }
+    },
   });
   return results;
 };
@@ -210,7 +196,6 @@ export const getAvailableRoomsOnDatesService = async (
 
 const toDateString = (date: Date) => date.toISOString().split("T")[0];
 
-
 export const updateRoomAvailability = async (roomId: number) => {
   const today = new Date();
 
@@ -228,34 +213,4 @@ export const updateRoomAvailability = async (roomId: number) => {
     .update(rooms)
     .set({ isAvailable: !isFullyBooked })
     .where(eq(rooms.roomId, roomId));
-};
-
-// Controller
-export const getAvailableRoomsController = async (
-  req: Request,
-  res: Response
-) => {
-  try {
-    const { checkInDate, checkOutDate } = req.query as {
-      checkInDate: string;
-      checkOutDate: string;
-    };
-
-    if (!checkInDate || !checkOutDate) {
-      return res
-        .status(400)
-        .json({ message: "Missing check-in or check-out date" });
-    }
-
-    const rooms = await getAvailableRoomsOnDatesService(
-      checkInDate,
-      checkOutDate
-    );
-    res.status(200).json({ success: true, data: rooms });
-  } catch (error: any) {
-    res.status(500).json({
-      message: "Failed to fetch available rooms",
-      error: error.message,
-    });
-  }
 };

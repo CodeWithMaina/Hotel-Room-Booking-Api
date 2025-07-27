@@ -46,7 +46,7 @@ export const getHotelsService = async (): Promise<Hotel[] | null> => {
       category: true,
       rating: true,
     },
-     with: {
+    with: {
       owner: {
         columns: {
           userId: true,
@@ -55,7 +55,7 @@ export const getHotelsService = async (): Promise<Hotel[] | null> => {
           email: true,
           profileImage: true,
           contactPhone: true,
-        }
+        },
       },
     },
   });
@@ -66,8 +66,8 @@ export const getHotelByIdService = async (
 ): Promise<THotelSelect | null> => {
   const results = await db.query.hotels.findFirst({
     where: eq(hotels.hotelId, hotelId),
-     with: {
-      owner:  {
+    with: {
+      owner: {
         columns: {
           userId: true,
           firstName: true,
@@ -75,7 +75,7 @@ export const getHotelByIdService = async (
           email: true,
           profileImage: true,
           contactPhone: true,
-        }
+        },
       },
     },
   });
@@ -86,7 +86,14 @@ export const getHotelByIdService = async (
 export const createHotelService = async (
   hotelData: THotelInsert
 ): Promise<THotelSelect> => {
-  const results = await db.insert(hotels).values(hotelData).returning();
+  // Ensure gallery is properly formatted
+  const formattedData = {
+    ...hotelData,
+    gallery: Array.isArray(hotelData.gallery) ? hotelData.gallery : [],
+    thumbnail: hotelData.thumbnail || null,
+  };
+
+  const results = await db.insert(hotels).values(formattedData).returning();
   return results[0];
 };
 

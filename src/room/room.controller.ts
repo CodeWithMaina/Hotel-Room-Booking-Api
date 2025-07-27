@@ -76,12 +76,24 @@ export const updateRoomController = async (req: Request, res: Response) => {
       return;
     }
 
-    const roomData: Partial<TRoomInsert> & { amenities?: number[] } = req.body;
+    // Handle both nested and flat structures
+    const requestBody = req.body;
+    const roomData = requestBody.roomData || requestBody;
     
-    // Validate required fields if needed
+    // Convert string dates to Date objects
+    if (roomData.createdAt && typeof roomData.createdAt === 'string') {
+      roomData.createdAt = new Date(roomData.createdAt);
+    }
+    
+    // Validate required fields
     if (!roomData || Object.keys(roomData).length === 0) {
       res.status(400).json({ message: "No data provided for update" });
       return;
+    }
+
+    // Ensure pricePerNight is a string if provided
+    if (roomData.pricePerNight !== undefined) {
+      roomData.pricePerNight = String(roomData.pricePerNight);
     }
 
     const updatedRoom = await updateRoomService(roomId, roomData);
@@ -173,7 +185,10 @@ export const getRoomWithAmenitiesController = async (req: Request, res: Response
 
 
 // Controller
-export const getAvailableRoomsController = async (req: Request, res: Response) => {
+export const getAvailableRoomsController = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const { checkInDate, checkOutDate } = req.query as {
       checkInDate: string;
@@ -181,10 +196,16 @@ export const getAvailableRoomsController = async (req: Request, res: Response) =
     };
 
     if (!checkInDate || !checkOutDate) {
-      return res.status(400).json({ message: "Missing check-in or check-out date" });
+       res
+        .status(400)
+        .json({ message: "Missing check-in or check-out date" });
+        return
     }
 
-    const rooms = await getAvailableRoomsOnDatesService(checkInDate, checkOutDate);
+    const rooms = await getAvailableRoomsOnDatesService(
+      checkInDate,
+      checkOutDate
+    );
     res.status(200).json({ success: true, data: rooms });
   } catch (error: any) {
     res.status(500).json({
@@ -193,3 +214,4 @@ export const getAvailableRoomsController = async (req: Request, res: Response) =
     });
   }
 };
+
