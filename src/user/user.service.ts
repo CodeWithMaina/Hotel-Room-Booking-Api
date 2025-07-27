@@ -2,6 +2,7 @@ import db from "../drizzle/db";
 import { eq } from "drizzle-orm";
 import { users } from "../drizzle/schema";
 import { TUserInsert, TUserSelect } from "../drizzle/schema";
+import { TUserReturn, TUserUpdateSchema } from "./userUpdateSchema";
 
 interface TReturnUser {
   firstName: string;
@@ -43,16 +44,48 @@ export const createUserService = async (
 
 export const updateUserService = async (
   userId: number,
-  userData: Partial<TUserInsert>
-): Promise<TUserSelect | null> => {
-  const result = await db
-    .update(users)
-    .set(userData)
-    .where(eq(users.userId, userId))
-    .returning();
+  userData: Partial<TUserUpdateSchema>
+): Promise<TUserReturn | null> => {
+  try {
+    const result = await db
+      .update(users)
+      .set({
+        ...userData,
+        updatedAt: new Date()
+      })
+      .where(eq(users.userId, userId))
+      .returning({
+        userId: users.userId,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email,
+        profileImage: users.profileImage,
+        bio: users.bio,
+        contactPhone: users.contactPhone,
+        role: users.role,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+      });
 
-  return result[0] || null;
+    return result[0] || null;
+  } catch (error) {
+    console.error('Database update error:', error);
+    throw error;
+  }
 };
+
+// export const updateUserService = async (
+//   userId: number,
+//   userData: Partial<TUserInsert>
+// ): Promise<TUserSelect | null> => {
+//   const result = await db
+//     .update(users)
+//     .set(userData)
+//     .where(eq(users.userId, userId))
+//     .returning();
+
+//   return result[0] || null;
+// };
 
 export const deleteUserService = async (
   userId: number

@@ -1,81 +1,112 @@
-import { NextFunction, Request, Response } from "express";
+// auth.middleware.ts
+import { NextFunction, Request, Response, RequestHandler } from "express";
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
 import { userRoleEnum } from "../drizzle/schema";
 
-dotenv.config();
+type UserRole = (typeof userRoleEnum.enumValues)[number];
 
 declare global {
   namespace Express {
     interface Request {
-      user?: DecodedToken;
+      user?: {
+        userId: number;
+        email: string;
+        userType: UserRole;
+        firstName: string;
+        lastName: string;
+      };
     }
   }
 }
 
-type DecodedToken = {
-  userId: number;
-  email: string;
-  role: typeof userRoleEnum.enumValues[number];
-  firstName: string;
-  lastName: string;
-  exp: number;
-};
-
-// AUTHENTICATION MIDDLEWARE
-export const verifyToken = async (token: string, secret: string) => {
-  try {
-    const decoded = jwt.verify(token, secret) as DecodedToken;
-    return decoded;
-  } catch (error) {
-    return null;
-  }
-};
-
-// AUTHORIZATION MIDDLEWARE
-export const authMiddleware = async (
+/**
+ * Main authentication middleware
+ */
+export const authenticate: RequestHandler = (
   req: Request,
   res: Response,
-  next: NextFunction,
-  requiredRole?: typeof userRoleEnum.enumValues[number]
+  next: NextFunction
 ) => {
   const token = req.header("Authorization")?.replace("Bearer ", "");
+
+  console.log("Received token:", token); // Debug log
+
   if (!token) {
-    return res.status(401).json({ error: "Authorization header is missing" });
+    console.log("No token found in headers"); // Debug log
+    res.status(401).json({
+      success: false,
+      message: "Authentication required",
+    });
+    return;
   }
 
-  const decodedToken = await verifyToken(token, process.env.JWT_SECRET as string);
-  if (!decodedToken) {
-    return res.status(401).json({ error: "Invalid or expired token" });
-  }
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+      userId: number;
+      email: string;
+      userType: UserRole;
+      firstName: string;
+      lastName: string;
+      exp: number;
+    };
 
-  // If no specific role required, just verify token and continue
-  if (!requiredRole) {
-    req.user = decodedToken;
-    return next();
-  }
+    if (Date.now() >= decoded.exp * 1000) {
+      res.status(401).json({
+        success: false,
+        message: "Token expired",
+      });
+      return;
+    }
 
-  // Check if user has required role
-  if (decodedToken.role === requiredRole) {
-    req.user = decodedToken;
-    return next();
-  }
+    req.user = {
+      userId: decoded.userId,
+      email: decoded.email,
+      userType: decoded.userType,
+      firstName: decoded.firstName,
+      lastName: decoded.lastName,
+    };
 
-  return res
-    .status(403)
-    .json({ error: "Forbidden: You do not have permission to access this resource" });
+    next();
+  } catch (error) {
+    console.error("Authentication error:", error);
+    res.status(401).json({
+      success: false,
+      message: "Invalid or expired token",
+    });
+  }
 };
 
-// Role-specific middleware
-export const adminAuth = (req: Request, res: Response, next: NextFunction) =>
-  authMiddleware(req, res, next, "admin");
+/**
+ * Role-based authorization middleware
+ */
+export const authorizeRoles = <T extends UserRole>(
+  ...roles: T[]
+): RequestHandler => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+      return;
+    }
 
-export const userAuth = (req: Request, res: Response, next: NextFunction) =>
-  authMiddleware(req, res, next, "user");
+    if (!roles.includes(req.user.userType as T)) {
+      res.status(403).json({
+        success: false,
+        message: "You don't have permission to access this resource",
+      });
+      return;
+    }
 
-export const ownerAuth = (req: Request, res: Response, next: NextFunction) =>
-  authMiddleware(req, res, next, "user");
+    next();
+  };
+};
 
-// General authentication - no specific role required
-export const optionalAuth = (req: Request, res: Response, next: NextFunction) =>
-  authMiddleware(req, res, next);
+// Specific role middlewares
+export const adminOnly = authorizeRoles("admin");
+export const ownerOnly = authorizeRoles("owner");
+export const userOnly = authorizeRoles("user");
+export const ownerOrAdmin = authorizeRoles("owner", "admin");
+
+export const authenticated = authenticate;

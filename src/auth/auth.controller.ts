@@ -81,12 +81,12 @@ export const loginUser: RequestHandler = async (
 
     //Generate a token
     let payload = {
-      firstName: user.firstName,
-      lastName: user.lastName,
       userId: user.userId,
       email: user.email,
       userType: user.role,
-      exp: Math.floor(Date.now() / 1000) + 60 * 60, // Token expires in 1 hour
+      firstName: user.firstName,
+      lastName: user.lastName,
+      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // 24 hours expiration
     };
 
     let secret = process.env.JWT_SECRET as string;

@@ -7,6 +7,7 @@ import {
   deleteUserService,
 } from "./user.service";
 import { TUserInsert, TUserSelect } from "../drizzle/schema";
+import { userUpdateSchema } from "./userUpdateSchema";
 
 export const getUsersController = async (req: Request, res: Response) => {
   try {
@@ -78,30 +79,72 @@ export const updateUserController = async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.id);
     if (isNaN(userId)) {
-      res.status(400).json({ message: "Invalid user ID" });
-      return;
+      return res.status(400).json({ message: "Invalid user ID" });
     }
 
-    const userData: Partial<TUserInsert> = req.body;
-    if (Object.keys(userData).length === 0) {
-      res.status(400).json({ message: "No data provided for update" });
-      return;
+    // Parse and validate request body
+    const parsed = userUpdateSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: "Validation failed",
+        errors: parsed.error.flatten().fieldErrors,
+      });
     }
 
-    const updatedUser = await updateUserService(userId, userData);
+    const filteredData = parsed.data;
+
+    const updatedUser = await updateUserService(userId, filteredData);
     if (!updatedUser) {
-      res.status(404).json({ message: "User not found" });
-      return;
-    } else {
-      res.status(200).json(updatedUser);
+      return res.status(404).json({ message: "User not found" });
     }
+
+    return res.status(200).json(updatedUser);
   } catch (error: any) {
-    res.status(500).json({
+    console.error("Update user error:", error);
+    
+    if (error.code === '23505') {
+      return res.status(409).json({
+        message: "Email already exists",
+        error: "email_taken",
+      });
+    }
+
+    return res.status(500).json({
       message: "Failed to update user",
       error: error.message,
     });
   }
 };
+
+// export const updateUserController = async (req: Request, res: Response) => {
+//   try {
+//     const userId = parseInt(req.params.id);
+//     if (isNaN(userId)) {
+//       res.status(400).json({ message: "Invalid user ID" });
+//       return;
+//     }
+
+//     const userData: Partial<TUserInsert> = req.body;
+//     if (Object.keys(userData).length === 0) {
+//       res.status(400).json({ message: "No data provided for update" });
+//       return;
+//     }
+
+//     const updatedUser = await updateUserService(userId, userData);
+//     if (!updatedUser) {
+//       res.status(404).json({ message: "User not found" });
+//       return;
+//     } else {
+//       res.status(200).json(updatedUser);
+//     }
+//   } catch (error: any) {
+//     res.status(500).json({
+//       message: "Failed to update user",
+//       error: error.message,
+//     });
+//   }
+// };
 
 export const deleteUserController = async (req: Request, res: Response) => {
   try {

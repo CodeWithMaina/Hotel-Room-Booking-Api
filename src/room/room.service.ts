@@ -15,14 +15,23 @@ import {
   bookings,
   entityAmenities,
   rooms,
+  roomTypes,
   THotelSelect,
+  TRoomTypeInsert,
 } from "../drizzle/schema";
 import { TRoomInsert, TRoomSelect } from "../drizzle/schema";
 import { TRoomAmenity, TRoomWithAmenities } from "../types/roomTypes";
 import { getAmenitiesForOneEntity } from "../entityAmenities/enityAmenities.service";
 
+
+type TEntityType = "room" | "hotel";
+
 export const getRoomsService = async (): Promise<TRoomSelect[]> => {
-  return await db.query.rooms.findMany();
+  return await db.query.rooms.findMany({
+    with: {
+      roomType: true,
+    }
+  });
 };
 
 export const getRoomByIdService = async (
@@ -30,6 +39,9 @@ export const getRoomByIdService = async (
 ): Promise<TRoomSelect | null> => {
   const result = await db.query.rooms.findFirst({
     where: eq(rooms.roomId, roomId),
+    with: {
+      roomType: true,
+    }
   });
   return result || null;
 };
@@ -43,15 +55,70 @@ export const createRoomService = async (
 
 export const updateRoomService = async (
   roomId: number,
-  roomData: Partial<TRoomInsert>
+  roomData: Partial<TRoomInsert> & { 
+    amenities?: number[];
+    roomType?: Partial<TRoomTypeInsert>;
+  }
 ): Promise<TRoomSelect | null> => {
-  const result = await db
-    .update(rooms)
-    .set(roomData)
-    .where(eq(rooms.roomId, roomId))
-    .returning();
+  try {
 
-  return result[0] || null;
+    // Prepare the update data
+    const { amenities, roomType, ...roomUpdateData } = roomData;
+
+    // Ensure createdAt is a proper Date object if it exists
+    if (roomUpdateData.createdAt) {
+      roomUpdateData.createdAt = new Date(roomUpdateData.createdAt);
+    }
+
+    // Update room type if provided
+    if (roomType && roomData.roomTypeId) {
+      const typeUpdateData = { ...roomType };
+      if (typeUpdateData.createdAt) {
+        typeUpdateData.createdAt = new Date(typeUpdateData.createdAt);
+      }
+      await db.update(roomTypes)
+        .set(typeUpdateData)
+        .where(eq(roomTypes.roomTypeId, roomData.roomTypeId));
+    }
+
+    // Update basic room info
+    const [updatedRoom] = await db
+      .update(rooms)
+      .set(roomUpdateData)
+      .where(eq(rooms.roomId, roomId))
+      .returning();
+    
+    if (!updatedRoom) return null;
+    
+    // Handle amenities if provided
+    if (amenities) {
+      // First delete existing amenities for this room
+      await db.delete(entityAmenities)
+        .where(
+          and(
+            eq(entityAmenities.entityId, roomId),
+            eq(entityAmenities.entityType, "room")
+          )
+        );
+      
+      // Insert new amenities if any
+      if (amenities.length > 0) {
+        await db.insert(entityAmenities).values(
+          amenities.map(amenityId => ({
+            amenityId,
+            entityId: roomId,
+            entityType: "room" as TEntityType,
+            createdAt: new Date() // Ensure createdAt is a Date object
+          }))
+        );
+      }
+    }
+    
+    return updatedRoom;
+  } catch (error) {
+    console.error('Error updating room:', error);
+    throw error;
+  }
 };
 
 export const deleteRoomService = async (
@@ -70,6 +137,9 @@ export const getRoomByHotelIdService = async (
 ): Promise<TRoomSelect[]> => {
   const results = await db.query.rooms.findMany({
     where: eq(rooms.hotelId, hotelId),
+    with: {
+      roomType: true,
+    }
   });
   return results;
 };

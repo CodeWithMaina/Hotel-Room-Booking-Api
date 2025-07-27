@@ -13,13 +13,15 @@ import { authRouter } from "./auth/auth.route";
 import { amenityRouter } from "./amenities/amenities.route";
 import { addressRouter } from "./addresses/addresses.route";
 import { entityAmenityRouter } from "./entityAmenities/enityAmenities.routes";
-import { analyticsRouter } from "./analytics/analytics.route";
 import { wishlistRouter } from "./wishlist/wishlist.route";
 import { stripeRouter } from "./stripe/stripe.routes";
 import { contactRouter } from "./contact/contact.routes";
 import { availabilityRouter } from "./availability/availability.route";
 import { newsletterRouter } from "./newletter/newsletter.route";
 import { webhookHandler } from "./stripe/stripe.webhook";
+import { reviewRouter } from "./reviews/review.routes";
+import { roomTypeRouter } from "./roomType/roomType.routes";
+import { analyticsRouter } from "./analytics/analytics.route";
 
 dotenv.config();
 
@@ -76,6 +78,8 @@ app.use("/api", analyticsRouter);
 app.use("/api", addressRouter);
 app.use("/api", entityAmenityRouter);
 app.use("/api", stripeRouter);
+app.use("/api", reviewRouter);
+app.use("/api", roomTypeRouter);
 
 // 🚀 Start Server
 app.listen(PORT, () => {

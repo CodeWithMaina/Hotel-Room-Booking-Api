@@ -52,7 +52,7 @@ export const getRoomByIdController = async (req: Request, res: Response) => {
 export const createRoomController = async (req: Request, res: Response) => {
   try {
     const roomData: TRoomInsert = req.body;
-    if (!roomData.roomType || !roomData.pricePerNight || !roomData.capacity || !roomData.hotelId) {
+    if (!roomData.roomTypeId || !roomData.pricePerNight || !roomData.capacity || !roomData.hotelId) {
       res.status(400).json({ message: "Missing required fields" });
       return;
     }
@@ -67,6 +67,7 @@ export const createRoomController = async (req: Request, res: Response) => {
   }
 };
 
+
 export const updateRoomController = async (req: Request, res: Response) => {
   try {
     const roomId = parseInt(req.params.id);
@@ -75,8 +76,10 @@ export const updateRoomController = async (req: Request, res: Response) => {
       return;
     }
 
-    const roomData: Partial<TRoomInsert> = req.body;
-    if (Object.keys(roomData).length === 0) {
+    const roomData: Partial<TRoomInsert> & { amenities?: number[] } = req.body;
+    
+    // Validate required fields if needed
+    if (!roomData || Object.keys(roomData).length === 0) {
       res.status(400).json({ message: "No data provided for update" });
       return;
     }
@@ -86,8 +89,13 @@ export const updateRoomController = async (req: Request, res: Response) => {
       res.status(404).json({ message: "Room not found" });
       return;
     }
-    res.status(200).json(updatedRoom);
+    
+    // Fetch the full room with amenities to return
+    const roomWithAmenities = await getRoomWithAmenitiesService(roomId);
+    
+    res.status(200).json(roomWithAmenities);
   } catch (error: any) {
+    console.error('Error in updateRoomController:', error);
     res.status(500).json({
       message: "Failed to update room",
       error: error.message,

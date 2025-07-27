@@ -76,8 +76,10 @@ CREATE TABLE "entityAmenities" (
 CREATE TABLE "hotels" (
 	"hotelId" serial PRIMARY KEY NOT NULL,
 	"name" varchar(255) NOT NULL,
+	"ownerId" integer NOT NULL,
 	"location" varchar(255),
 	"thumbnail" varchar,
+	"description" text,
 	"gallery" varchar(255)[],
 	"contactPhone" varchar(20),
 	"category" varchar(100),
@@ -105,13 +107,33 @@ CREATE TABLE "payments" (
 	"updatedAt" timestamp DEFAULT now()
 );
 --> statement-breakpoint
+CREATE TABLE "reviews" (
+	"reviewId" serial PRIMARY KEY NOT NULL,
+	"userId" integer NOT NULL,
+	"bookingId" integer NOT NULL,
+	"roomId" integer,
+	"hotelId" integer,
+	"rating" numeric(2, 1) NOT NULL,
+	"comment" text,
+	"createdAt" timestamp DEFAULT now(),
+	"updatedAt" timestamp DEFAULT now()
+);
+--> statement-breakpoint
+CREATE TABLE "roomTypes" (
+	"roomTypeId" serial PRIMARY KEY NOT NULL,
+	"name" varchar(100) NOT NULL,
+	"description" text,
+	"createdAt" timestamp DEFAULT now()
+);
+--> statement-breakpoint
 CREATE TABLE "rooms" (
 	"roomId" serial PRIMARY KEY NOT NULL,
 	"hotelId" integer,
-	"roomType" varchar(100) NOT NULL,
+	"roomTypeId" integer,
 	"pricePerNight" numeric(10, 2) NOT NULL,
 	"capacity" integer NOT NULL,
 	"thumbnail" varchar,
+	"description" text,
 	"gallery" varchar(255)[],
 	"isAvailable" boolean DEFAULT true,
 	"createdAt" timestamp DEFAULT now()
@@ -144,7 +166,13 @@ ALTER TABLE "bookings" ADD CONSTRAINT "bookings_userId_users_userId_fk" FOREIGN 
 ALTER TABLE "bookings" ADD CONSTRAINT "bookings_roomId_rooms_roomId_fk" FOREIGN KEY ("roomId") REFERENCES "public"."rooms"("roomId") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "customerSupportTickets" ADD CONSTRAINT "customerSupportTickets_userId_users_userId_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("userId") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "entityAmenities" ADD CONSTRAINT "entityAmenities_amenityId_amenities_amenityId_fk" FOREIGN KEY ("amenityId") REFERENCES "public"."amenities"("amenityId") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "hotels" ADD CONSTRAINT "hotels_ownerId_users_userId_fk" FOREIGN KEY ("ownerId") REFERENCES "public"."users"("userId") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "payments" ADD CONSTRAINT "payments_bookingId_bookings_bookingId_fk" FOREIGN KEY ("bookingId") REFERENCES "public"."bookings"("bookingId") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_userId_users_userId_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("userId") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_bookingId_bookings_bookingId_fk" FOREIGN KEY ("bookingId") REFERENCES "public"."bookings"("bookingId") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_roomId_rooms_roomId_fk" FOREIGN KEY ("roomId") REFERENCES "public"."rooms"("roomId") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_hotelId_hotels_hotelId_fk" FOREIGN KEY ("hotelId") REFERENCES "public"."hotels"("hotelId") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "rooms" ADD CONSTRAINT "rooms_hotelId_hotels_hotelId_fk" FOREIGN KEY ("hotelId") REFERENCES "public"."hotels"("hotelId") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rooms" ADD CONSTRAINT "rooms_roomTypeId_roomTypes_roomTypeId_fk" FOREIGN KEY ("roomTypeId") REFERENCES "public"."roomTypes"("roomTypeId") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "wishlist" ADD CONSTRAINT "wishlist_userId_users_userId_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("userId") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "wishlist" ADD CONSTRAINT "wishlist_roomId_rooms_roomId_fk" FOREIGN KEY ("roomId") REFERENCES "public"."rooms"("roomId") ON DELETE cascade ON UPDATE no action;

@@ -1,7 +1,34 @@
-import { Router } from "express";
-import { getDashboardData, getSummaryController } from "./analytics.controller";
+import express from "express";
+import {
+  getAdminAnalytics,
+  getOwnerAnalytics,
+  getUserAnalytics,
+  getRoleBasedAnalytics,
+} from "./analytics.controller";
+import { adminOnly, authenticated, ownerOnly, userOnly } from "../middleware/bearAuth";
 
-export const analyticsRouter = Router();
+export const analyticsRouter = express.Router();
 
-analyticsRouter.get("/user/analytics/summary", getSummaryController);
-analyticsRouter.get("/admin/analytics/summary", getDashboardData);
+// Admin-only route
+analyticsRouter.get(
+  "/analytics/admin",authenticated,adminOnly,
+  getAdminAnalytics
+);
+
+// Owner-only route
+analyticsRouter.get(
+  "/analytics/owner",authenticated, ownerOnly,
+  getOwnerAnalytics
+);
+
+// User route
+analyticsRouter.get(
+  "/analytics/user",authenticated, userOnly, 
+  getUserAnalytics
+);
+
+// Smart route that auto-detects role
+analyticsRouter.get(
+  "/analytics",authenticated,
+  getRoleBasedAnalytics
+);

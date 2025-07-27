@@ -60,7 +60,7 @@ export type TBookingFindParams = {
     room: {
       columns: {
         roomId: boolean;
-        roomType: boolean;
+        roomTypeId: boolean;
         hotelId: boolean;
         pricePerNight: boolean;
         thumbnail: boolean;
@@ -68,7 +68,24 @@ export type TBookingFindParams = {
         amenities: boolean;
         isAvailable: boolean;
       };
+      with?: {  // Make this optional
+        roomType: {
+          columns: {
+            roomTypeId: boolean;
+            name: boolean;
+            description: boolean;
+            createdAt: boolean;
+          };
+        };
+      };
     };
   };
-  where?: any; 
+  where?: any;
 };
+
+export type TRoomType = {
+    roomTypeId: number;
+    name: string;
+    description: string;
+    createdAt: string;
+  };

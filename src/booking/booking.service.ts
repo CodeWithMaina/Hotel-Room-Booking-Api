@@ -1,3 +1,4 @@
+import { roomTypes } from "./../drizzle/schema";
 import db from "../drizzle/db";
 import { and, count, desc, eq, gte, inArray, lte, ne, or } from "drizzle-orm";
 import {
@@ -45,13 +46,23 @@ const queryParams: TBookingFindParams = {
     room: {
       columns: {
         roomId: true,
-        roomType: true,
+        roomTypeId: true,
         hotelId: true,
         pricePerNight: true,
         thumbnail: true,
         capacity: true,
         amenities: true,
         isAvailable: true,
+      },
+      with: {
+        roomType: {
+          columns: {
+            roomTypeId: true,
+            name: true,
+            description: true,
+            createdAt: true,
+          },
+        },
       },
     },
   },
@@ -109,12 +120,22 @@ export const getBookingByIdService = async (
       room: {
         columns: {
           roomId: true,
-          roomType: true,
+          roomTypeId: true,
           hotelId: true,
           thumbnail: true,
           pricePerNight: true,
           capacity: true,
           isAvailable: true,
+        },
+        with: {
+          // Add this
+          roomType: {
+            columns: {
+              roomTypeId: true,
+              name: true,
+              description: true,
+            },
+          },
         },
       },
     },
@@ -134,10 +155,8 @@ export const createBookingService = async (
   const checkInDate = new Date(data.checkInDate);
   const checkOutDate = new Date(data.checkOutDate);
 
-  if (isNaN(checkInDate.getTime()))
-    throw new Error("Invalid check-in date");
-  if (isNaN(checkOutDate.getTime()))
-    throw new Error("Invalid check-out date");
+  if (isNaN(checkInDate.getTime())) throw new Error("Invalid check-in date");
+  if (isNaN(checkOutDate.getTime())) throw new Error("Invalid check-out date");
   if (checkInDate >= checkOutDate)
     throw new Error("Check-out must be after check-in");
 
