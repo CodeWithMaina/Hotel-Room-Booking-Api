@@ -1,4 +1,3 @@
-// analytics.service.ts
 import db from "../drizzle/db";
 import {
   and,
@@ -9,6 +8,7 @@ import {
   eq,
   gte,
   inArray,
+  isNotNull,
   lte,
   ne,
   sql,
@@ -533,213 +533,7 @@ interface UserDashboardStats {
   bookingTrends: { date: string; count: number }[];
 }
 
-// export const getUserDashboardStats = async (
-//   userId: number,
-//   dateRange?: DateRange
-// ): Promise<AnalyticsResponse<UserDashboardStats>> => {
-//   try {
-//     // Default to last 12 months if no date range provided
-//     const defaultEndDate = new Date();
-//     const defaultStartDate = new Date();
-//     defaultStartDate.setMonth(defaultEndDate.getMonth() - 12);
-
-//     const range = dateRange || {
-//       startDate: defaultStartDate,
-//       endDate: defaultEndDate,
-//     };
-
-//     validateDateRange(range);
-
-//     // Get all stats in parallel
-//     const [
-//       totalBookingsResult,
-//       upcomingBookingsResult,
-//       pastBookingsResult,
-//       totalSpentResult,
-//       wishlistCountResult,
-//       favoriteHotelResult,
-//       bookingTrendsResult,
-//     ] = await Promise.all([
-//       // Total bookings count
-//       db
-//         .select({ count: count() })
-//         .from(bookings)
-//         .where(eq(bookings.userId, userId)),
-
-//       // Upcoming bookings (future check-ins)
-//       db.query.bookings.findMany({
-//         where: and(
-//           eq(bookings.userId, userId),
-//           gte(bookings.checkInDate, formatDate(new Date())),
-//           ne(bookings.bookingStatus, "Cancelled")
-//         ),
-//         orderBy: asc(bookings.checkInDate),
-//         with: {
-//           room: {
-//             columns: {
-//               roomId: true,
-//               pricePerNight: true,
-//               thumbnail: true,
-//             },
-//             with: {
-//               hotel: {
-//                 columns: {
-//                   name: true,
-//                   location: true,
-//                   thumbnail: true,
-//                 },
-//               },
-//               roomType: {
-//                 columns: {
-//                   name: true,
-//                 },
-//               },
-//             },
-//           },
-//           payments: {
-//             where: eq(payments.paymentStatus, "Completed"),
-//             columns: {
-//               amount: true,
-//               paymentDate: true,
-//             },
-//           },
-//         },
-//       }),
-
-//       // Past bookings (completed stays)
-//       db.query.bookings.findMany({
-//         where: and(
-//           eq(bookings.userId, userId),
-//           lte(bookings.checkOutDate, formatDate(new Date())),
-//           ne(bookings.bookingStatus, "Cancelled")
-//         ),
-//         orderBy: desc(bookings.checkOutDate),
-//         limit: 5,
-//         with: {
-//           room: {
-//             columns: {
-//               roomId: true,
-//               pricePerNight: true,
-//               thumbnail: true,
-//             },
-//             with: {
-//               hotel: {
-//                 columns: {
-//                   name: true,
-//                   location: true,
-//                 },
-//               },
-//               roomType: {
-//                 columns: {
-//                   name: true,
-//                 },
-//               },
-//             },
-//           },
-//           payments: {
-//             where: eq(payments.paymentStatus, "Completed"),
-//             columns: {
-//               amount: true,
-//             },
-//           },
-//           review: {
-//             columns: {
-//               rating: true,
-//               comment: true,
-//             },
-//           },
-//         },
-//       }),
-
-//       // Total amount spent (completed payments)
-//       db
-//         .select({ total: sum(payments.amount) })
-//         .from(payments)
-//         .innerJoin(bookings, eq(payments.bookingId, bookings.bookingId))
-//         .where(
-//           and(
-//             eq(bookings.userId, userId),
-//             eq(payments.paymentStatus, "Completed")
-//           )
-//         ),
-
-//       // Wishlist items count
-//       db
-//         .select({ count: count() })
-//         .from(wishlist)
-//         .where(eq(wishlist.userId, userId)),
-
-//       // Favorite hotel (most booked)
-//       db
-//         .select({
-//           hotelId: hotels.hotelId,
-//           name: hotels.name,
-//           bookingCount: sql<number>`COUNT(*)`,
-//         })
-//         .from(bookings)
-//         .innerJoin(rooms, eq(bookings.roomId, rooms.roomId))
-//         .innerJoin(hotels, eq(rooms.hotelId, hotels.hotelId))
-//         .where(
-//           and(
-//             eq(bookings.userId, userId),
-//             ne(bookings.bookingStatus, "Cancelled")
-//           )
-//         )
-//         .groupBy(hotels.hotelId, hotels.name)
-//         .orderBy(desc(sql`COUNT(*)`))
-//         .limit(1),
-
-//       // Booking trends (grouped by month)
-//       db
-//         .select({
-//           date: sql<string>`TO_CHAR(${bookings.createdAt}, 'YYYY-MM')`,
-//           count: count(),
-//         })
-//         .from(bookings)
-//         .where(
-//           and(
-//             eq(bookings.userId, userId),
-//             between(
-//               bookings.createdAt,
-//               range.startDate,
-//               range.endDate
-//             )
-//           )
-//         )
-//         .groupBy(sql`TO_CHAR(${bookings.createdAt}, 'YYYY-MM')`),
-//     ]);
-
-//     return {
-//       success: true,
-//       data: {
-//         totalBookings: totalBookingsResult[0]?.count || 0,
-//         upcomingBookings: upcomingBookingsResult,
-//         pastBookings: pastBookingsResult,
-//         totalSpent: Number(totalSpentResult[0]?.total || 0),
-//         wishlistCount: wishlistCountResult[0]?.count || 0,
-//         favoriteHotel: favoriteHotelResult[0]
-//           ? {
-//               hotelId: favoriteHotelResult[0].hotelId,
-//               name: favoriteHotelResult[0].name,
-//               bookingCount: Number(favoriteHotelResult[0].bookingCount),
-//             }
-//           : undefined,
-//         bookingTrends: bookingTrendsResult.map((row) => ({
-//           date: row.date,
-//           count: row.count,
-//         })),
-//       },
-//     };
-//   } catch (error: any) {
-//     console.error("Error in getUserDashboardStats:", error);
-//     return {
-//       success: false,
-//       data: {} as UserDashboardStats,
-//       message: error.message,
-//     };
-//   }
-// };
-
+// ====================== ROLE-BASED ANALYTICS ENTRY POINT ======================
 // ====================== ROLE-BASED ANALYTICS ENTRY POINT ======================
 export const getUserDashboardStats = async (
   userId: number,
@@ -757,6 +551,28 @@ export const getUserDashboardStats = async (
     };
 
     validateDateRange(range);
+
+    // Enhanced date handling utilities
+    const safeFormatDate = (date: Date | string | null | undefined): string => {
+      if (!date) return new Date().toISOString().split('T')[0];
+      const dateObj = typeof date === 'string' ? new Date(date) : date;
+      if (isNaN(dateObj.getTime())) {
+        console.warn('Invalid date encountered, using current date as fallback');
+        return new Date().toISOString().split('T')[0];
+      }
+      return dateObj.toISOString().split('T')[0];
+    };
+
+    const ensureValidDate = (date: any): Date | null => {
+      if (!date) return null;
+      try {
+        const dateObj = date instanceof Date ? date : new Date(date);
+        return isNaN(dateObj.getTime()) ? null : dateObj;
+      } catch (e) {
+        console.warn('Date conversion error:', e);
+        return null;
+      }
+    };
 
     // Get all stats in parallel
     const [
@@ -778,8 +594,10 @@ export const getUserDashboardStats = async (
       db.query.bookings.findMany({
         where: and(
           eq(bookings.userId, userId),
-          gte(bookings.checkInDate, formatDate(new Date())),
-          ne(bookings.bookingStatus, "Cancelled")
+          gte(bookings.checkInDate, safeFormatDate(new Date())),
+          ne(bookings.bookingStatus, "Cancelled"),
+          isNotNull(bookings.checkInDate),
+          isNotNull(bookings.checkOutDate)
         ),
         orderBy: asc(bookings.checkInDate),
         with: {
@@ -814,7 +632,7 @@ export const getUserDashboardStats = async (
         },
       }),
 
-      // Past bookings (completed stays) - using raw joins
+      // Past bookings (completed stays)
       db
         .select({
           booking: bookings,
@@ -853,8 +671,10 @@ export const getUserDashboardStats = async (
         .where(
           and(
             eq(bookings.userId, userId),
-            lte(bookings.checkOutDate, formatDate(new Date())),
-            ne(bookings.bookingStatus, "Cancelled")
+            lte(bookings.checkOutDate, safeFormatDate(new Date())),
+            ne(bookings.bookingStatus, "Cancelled"),
+            isNotNull(bookings.checkInDate),
+            isNotNull(bookings.checkOutDate)
           )
         )
         .orderBy(desc(bookings.checkOutDate))
@@ -914,21 +734,46 @@ export const getUserDashboardStats = async (
         .groupBy(sql`TO_CHAR(${bookings.createdAt}, 'YYYY-MM')`),
     ]);
 
+    // Process bookings with additional date validation
+    const processBookingDates = (booking: any) => {
+      const checkInDate = ensureValidDate(booking.checkInDate);
+      const checkOutDate = ensureValidDate(booking.checkOutDate);
+      
+      if (!checkInDate || !checkOutDate) {
+        console.warn(`Invalid dates found for booking ${booking.bookingId}`);
+        return null;
+      }
+
+      return {
+        ...booking,
+        checkInDate,
+        checkOutDate,
+      };
+    };
+
+    const processedUpcomingBookings = upcomingBookingsResult
+      .map(processBookingDates)
+      .filter(Boolean);
+
+    const processedPastBookings = pastBookingsResult
+      .map(row => ({
+        ...processBookingDates(row.booking),
+        room: {
+          ...row.room,
+          hotel: row.hotel,
+          roomType: row.roomType,
+        },
+        payments: row.payment ? [row.payment] : [],
+        review: row.review,
+      }))
+      .filter(Boolean);
+
     return {
       success: true,
       data: {
         totalBookings: totalBookingsResult[0]?.count || 0,
-        upcomingBookings: upcomingBookingsResult,
-        pastBookings: pastBookingsResult.map((row) => ({
-          ...row.booking,
-          room: {
-            ...row.room,
-            hotel: row.hotel,
-            roomType: row.roomType,
-          },
-          payments: row.payment ? [row.payment] : [],
-          review: row.review,
-        })),
+        upcomingBookings: processedUpcomingBookings,
+        pastBookings: processedPastBookings,
         totalSpent: Number(totalSpentResult[0]?.total || 0),
         wishlistCount: wishlistCountResult[0]?.count || 0,
         favoriteHotel: favoriteHotelResult[0]
@@ -949,7 +794,7 @@ export const getUserDashboardStats = async (
     return {
       success: false,
       data: {} as UserDashboardStats,
-      message: error.message,
+      message: error.message || "Failed to fetch user dashboard stats",
     };
   }
 };

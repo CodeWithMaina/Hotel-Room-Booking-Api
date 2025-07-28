@@ -2,10 +2,10 @@ import express from "express";
 import {
   getAdminAnalytics,
   getOwnerAnalytics,
-  getUserAnalytics,
   getRoleBasedAnalytics,
 } from "./analytics.controller";
 import { adminOnly, authenticated, ownerOnly, userOnly } from "../middleware/bearAuth";
+import { getUserAnalytics } from "./user.analytics.controller";
 
 export const analyticsRouter = express.Router();
 
@@ -23,7 +23,7 @@ analyticsRouter.get(
 
 // User route
 analyticsRouter.get(
-  "/analytics/user",authenticated, userOnly, 
+  "/analytics/user/:userId",authenticated, userOnly, 
   getUserAnalytics
 );
 
