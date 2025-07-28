@@ -75,14 +75,13 @@ export const getAdminDashboardStats = async (
 ): Promise<AnalyticsResponse<AdminDashboardStats>> => {
   try {
     // Default to last 30 days if no date range provided
-    const defaultEndDate = new Date();
-    const defaultStartDate = new Date();
-    defaultStartDate.setDate(defaultEndDate.getDate() - 30);
+    const now = new Date();
+    const defaultStartDate = new Date(0);
 
     // Handle partial or missing date range
     const range = {
       startDate: dateRange?.startDate || defaultStartDate,
-      endDate: dateRange?.endDate || defaultEndDate,
+      endDate: dateRange?.endDate || now,
     };
 
     validateDateRange(range);
@@ -240,13 +239,12 @@ export const getOwnerDashboardStats = async (
     }
 
     // Default to last 30 days if no date range provided
-    const defaultEndDate = new Date();
-    const defaultStartDate = new Date();
-    defaultStartDate.setDate(defaultEndDate.getDate() - 30);
+    const now = new Date();
+    const defaultStartDate = new Date(now.getFullYear(), 0, 1);
 
-    const range = dateRange || {
-      startDate: defaultStartDate,
-      endDate: defaultEndDate,
+    const range = {
+      startDate: dateRange?.startDate || defaultStartDate,
+      endDate: dateRange?.endDate || now,
     };
 
     validateDateRange(range);

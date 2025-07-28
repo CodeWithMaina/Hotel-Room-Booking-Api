@@ -11,7 +11,7 @@ export const analyticsRouter = express.Router();
 
 // Admin-only route
 analyticsRouter.get(
-  "/analytics/admin",authenticated,adminOnly,
+  "/analytics/admin",authenticated, adminOnly,
   getAdminAnalytics
 );
 
