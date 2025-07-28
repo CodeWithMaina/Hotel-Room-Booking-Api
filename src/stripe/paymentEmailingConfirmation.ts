@@ -157,7 +157,7 @@ export const sendBookingEmail = async (
       html = generateEmailTemplate(
         "Payment Received",
         `Hi ${firstName},`,
-        `<p>Your payment for Booking <strong>#${bookingId}</strong> was successful.</p>
+        `<p>Your payment for your Booking was successful.</p>
          <p><strong>Amount Paid:</strong> ${formatAmount(amount)}</p>
          <p>We'll confirm your booking shortly.</p>`,
         "Thank you for choosing our service!",
@@ -170,7 +170,7 @@ export const sendBookingEmail = async (
       html = generateEmailTemplate(
         "Your Booking is Confirmed",
         `Hi ${firstName},`,
-        `<p>Booking <strong>#${bookingId}</strong> has been successfully confirmed.</p>
+        `<p>Booking has been successfully confirmed.</p>
          <p><strong>Transaction ID:</strong> ${transactionId}</p>`,
         "We look forward to hosting you.",
         { text: "Check Itinerary", url: `${clientURL}user/booking-details` }
@@ -182,8 +182,8 @@ export const sendBookingEmail = async (
       html = generateEmailTemplate(
         "Payment Failed",
         `Hi ${firstName},`,
-        `<p>Your payment for Booking <strong>#${bookingId}</strong> failed.</p>
-         <p><strong>Transaction ID:</strong> ${transactionId}</p>
+        `<p>Your payment for the Booking failed.</p>
+         <p><strong>Amount To Be Paid:</strong> ${formatAmount(amount)}</p>
          <p>Please try again or contact support if the issue persists.</p>`,
         "Need help? We're here for you.",
         { text: "Retry Payment", url: `${clientURL}user/payment` }
