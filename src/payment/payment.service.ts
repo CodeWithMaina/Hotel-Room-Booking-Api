@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, and } from "drizzle-orm";
 import db from "../drizzle/db";
 import {
   bookings,
@@ -13,10 +13,9 @@ export const getPaymentsService = async (): Promise<
 > => {
   const results = await db.query.payments.findMany({
     with: {
-      booking: {
-        
-      }
-    }
+      booking: true,
+    },
+    orderBy: desc(payments.paymentDate),
   });
   return results || null;
 };
@@ -40,7 +39,6 @@ export const getPaymentByBookingIdService = async (
   });
   return results || null;
 };
-
 
 // Create payment
 export const createPaymentService = async (
@@ -129,18 +127,24 @@ export const updatePaymentByTransactionIdService = async (
   return results[0] || null;
 };
 
-
 export const getPaymentsByUserIdService = async (
   userId: number
 ): Promise<TPaymentSelect[]> => {
-  const results = await db
-    .select()
-    .from(payments)
-    .innerJoin(bookings, eq(payments.bookingId, bookings.bookingId))
-    .where(eq(bookings.userId, userId));
+  const results = await db.query.payments.findMany({
+    where: (payments, { exists }) => exists(
+      db.select()
+        .from(bookings)
+        .where(
+          and(
+            eq(bookings.bookingId, payments.bookingId),
+            eq(bookings.userId, userId)
+          )
+        )
+    ),
+    with: {
+      booking: true
+    }
+  });
 
-  return results.map((row) => ({
-    ...row.payments,
-    booking: row.bookings,
-  }));
+  return results;
 };

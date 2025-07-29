@@ -1,5 +1,5 @@
 import db from "../drizzle/db";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { users } from "../drizzle/schema";
 import { TUserInsert, TUserSelect } from "../drizzle/schema";
 import { TUserReturn, TUserUpdateSchema } from "./userUpdateSchema";
@@ -14,7 +14,9 @@ interface TReturnUser {
   role: "user" | "admin" | "owner" | null;
 }
 export const getUsersService = async (): Promise<TUserSelect[]> => {
-  return await db.query.users.findMany({});
+  return await db.query.users.findMany({
+    orderBy: desc(users.userId),
+  });
 };
 
 export const getUserByIdService = async (
@@ -51,7 +53,7 @@ export const updateUserService = async (
       .update(users)
       .set({
         ...userData,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(eq(users.userId, userId))
       .returning({
@@ -69,7 +71,7 @@ export const updateUserService = async (
 
     return result[0] || null;
   } catch (error) {
-    console.error('Database update error:', error);
+    console.error("Database update error:", error);
     throw error;
   }
 };

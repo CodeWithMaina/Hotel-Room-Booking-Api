@@ -78,7 +78,7 @@ export const getBookingsService = async (
     ...queryParams,
     limit: params.limit,
     offset: offset,
-    orderBy: desc(bookings.createdAt),
+    orderBy: desc(bookings.bookingId),
   });
 
   // Get total count
@@ -243,7 +243,7 @@ export const getBookingsByUserIdService = async (
     },
     limit: params.limit,
     offset: offset,
-    orderBy: desc(bookings.createdAt),
+    orderBy: desc(bookings.bookingId),
   });
 
   const totalResult = await db
@@ -307,7 +307,7 @@ export const getBookingsByStatusService = async (
     where: inArray(bookings.bookingStatus, filteredStatus),
     limit: params.limit,
     offset: offset,
-    orderBy: desc(bookings.createdAt),
+    orderBy: desc(bookings.bookingId),
   });
 
   // Get total count with the same filter

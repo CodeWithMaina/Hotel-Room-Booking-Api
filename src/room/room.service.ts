@@ -1,13 +1,11 @@
-import { Request, Response } from "express";
 import db from "../drizzle/db";
-import { and, eq, gte, inArray, lte, ne, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, ne, or, desc } from "drizzle-orm";
 import {
   amenities,
   bookings,
   entityAmenities,
   rooms,
   roomTypes,
-  THotelSelect,
   TRoomTypeInsert,
 } from "../drizzle/schema";
 import { TRoomInsert, TRoomSelect } from "../drizzle/schema";
@@ -21,6 +19,7 @@ export const getRoomsService = async (): Promise<TRoomSelect[]> => {
     with: {
       roomType: true,
     },
+    orderBy: desc(rooms.roomId),
   });
 };
 
@@ -126,6 +125,7 @@ export const getRoomByHotelIdService = async (
     with: {
       roomType: true,
     },
+    orderBy: desc(rooms.roomId),
   });
   return results;
 };

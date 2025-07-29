@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import db from "../drizzle/db";
 import {
   addresses,
@@ -58,6 +58,8 @@ export const getHotelsService = async (): Promise<Hotel[] | null> => {
         },
       },
     },
+    orderBy: desc(hotels.hotelId),
+
   });
 };
 // Get hotel by ID
@@ -144,6 +146,7 @@ export const getHotelEntityAmenitiesService = async (
     with: {
       amenity: true,
     },
+    orderBy: desc(hotels.hotelId),
   });
 };
 
