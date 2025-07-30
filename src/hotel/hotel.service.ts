@@ -146,7 +146,6 @@ export const getHotelEntityAmenitiesService = async (
     with: {
       amenity: true,
     },
-    orderBy: desc(hotels.hotelId),
   });
 };
 
@@ -166,26 +165,55 @@ export const getHotelAmenitiesDetailsService = async (
 };
 
 export const getHotelFullDetailsService = async (hotelId: number) => {
-  const [address, entityAmenities, hotel] = await Promise.all([
-    getHotelAddressService(hotelId),
-    getHotelEntityAmenitiesService(hotelId),
-    getHotelByIdService(hotelId),
-  ]);
+  try {
+    const [address, entityAmenities, hotel] = await Promise.all([
+      getHotelAddressService(hotelId),
+      getHotelEntityAmenitiesService(hotelId),
+      getHotelByIdService(hotelId),
+    ]);
 
-  const amenityIds = entityAmenities
-    .map((ea) => ea.amenityId)
-    .filter((id): id is number => id !== null && id !== undefined);
-  const amenityDetails: TAmenitySelect[] =
-    amenityIds.length > 0
-      ? await db.query.amenities.findMany({
+    if (!hotel) {
+      throw new Error('Hotel not found');
+    }
+
+    // Safely get amenity details
+    const amenityDetails = await (async () => {
+      if (!entityAmenities || entityAmenities.length === 0) {
+        return [];
+      }
+
+      const amenityIds = entityAmenities
+        .map((ea) => ea.amenityId)
+        .filter((id): id is number => id !== null && id !== undefined);
+
+      if (amenityIds.length === 0) {
+        return [];
+      }
+
+      try {
+        return await db.query.amenities.findMany({
           where: inArray(amenities.amenityId, amenityIds),
-        })
-      : [];
+        });
+      } catch (error) {
+        console.error('Error fetching amenities:', error);
+        return [];
+      }
+    })();
 
-  return {
-    address,
-    amenities: amenityDetails,
-    hotel,
-    // entityAmenities
-  };
+    return {
+      success: true,
+      data: {
+        hotel,
+        address: address || null,
+        amenities: amenityDetails || [],
+      }
+    };
+  } catch (error) {
+    console.error('Error in getHotelFullDetailsService:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to fetch hotel details',
+      data: null
+    };
+  }
 };

@@ -186,14 +186,23 @@ export const getHotelFullDetailsController = async (req: Request, res: Response)
   try {
     const hotelId = parseInt(req.params.hotelId);
     if (isNaN(hotelId)) {
-       res.status(400).json({ message: "Invalid hotel ID" });
-       return;
+      return res.status(400).json({ 
+        success: false,
+        message: "Invalid hotel ID" 
+      });
     }
 
-    const hotelDetails = await getHotelFullDetailsService(hotelId);
-    res.status(200).json(hotelDetails);
+    const result = await getHotelFullDetailsService(hotelId);
+    
+    if (!result.success) {
+      return res.status(404).json(result);
+    }
+
+    return res.status(200).json(result);
   } catch (error: any) {
-    res.status(500).json({
+    console.error('Controller error:', error);
+    return res.status(500).json({
+      success: false,
       message: "Failed to fetch hotel details",
       error: error.message,
     });
