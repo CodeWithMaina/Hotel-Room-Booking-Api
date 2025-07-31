@@ -25,12 +25,7 @@ export const createUser: RequestHandler = async (
       return;
     }
 
-    // Genereate hashed password
-    const salt = bcrypt.genSaltSync(10);
-    const hashedPassword = bcrypt.hashSync(user.password, salt);
-    user.password = hashedPassword;
-
-    // Call the service to create the user
+    // Call the service to create the user (password should be hashed in the service)
     const newUser = await createUserServices(user);
     const results = await sendNotificationEmail(
       user.email,
@@ -72,9 +67,8 @@ export const loginUser: RequestHandler = async (
       return;
     }
 
-    // Compare passwords
-    const isMatch = bcrypt.compareSync(password, user.password);
-    if (!isMatch) {
+    // Direct password comparison (no hashing)
+    if (password !== user.password) {
       res.status(401).json({ error: "Invalid password" });
       return;
     }
@@ -198,11 +192,8 @@ export const updatePassword: RequestHandler = async (
       return;
     }
 
-    const salt = bcrypt.genSaltSync(10);
-    const hashedPassword = bcrypt.hashSync(password, salt);
-
-    // Now use the user's email from DB
-    await updateUserPasswordService(user.email, hashedPassword);
+    // Password hashing should be handled in the service layer
+    await updateUserPasswordService(user.email, password);
 
     // Send reset email (you can implement this function)
     const results = await sendNotificationEmail(
