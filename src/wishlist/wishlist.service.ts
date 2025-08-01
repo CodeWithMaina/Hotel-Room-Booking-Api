@@ -11,7 +11,8 @@ export const getWishlistItemsByUserIdService = async (
     with: {
       room: {
         with: {
-          hotel: true
+          hotel: true,
+          roomType: true
         }
       }
     }
